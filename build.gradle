@@ -1,0 +1,77 @@
+plugins {
+	id 'java'
+	id 'war'
+	id 'org.springframework.boot' version '2.7.7'
+	id 'io.spring.dependency-management' version '1.1.4'
+}
+
+group = 'com.bluenetworks.webapp'
+version = '0.0.1-SNAPSHOT'
+
+sourceCompatibility = "1.8"
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'com.google.code.findbugs:jsr305:3.0.2' // javax.annotation.meta.When error
+	implementation 'com.google.code.gson:gson:2.9.0'
+	implementation 'com.google.guava:guava:28.2-jre' // GUAVA
+	implementation 'com.googlecode.json-simple:json-simple:1.1.1'
+	implementation 'com.jcraft:jsch:0.1.55'
+	implementation 'com.itextpdf:itextpdf:5.5.13.3'
+	implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.5.6' // p6spy
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+	implementation 'org.springframework.boot:spring-boot-starter-aop' 
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+	implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16'  /* Log4JDBC */
+    implementation 'org.json:json:20231013'
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.2.2' // mybatis
+    implementation 'org.apache.tomcat.embed:tomcat-embed-jasper' // jsp
+    implementation 'org.webjars:jqgrid:4.7.0' // jqgrid
+    implementation 'org.apache.commons:commons-lang3:3.0' // lang3 -> StringUtils
+    implementation 'org.apache.commons:commons-text:1.10.0'
+    implementation 'org.apache.commons:commons-collections4:4.4'
+
+    implementation 'javax.servlet:jstl' // jstl
+    implementation 'ws.wamp.jawampa:jawampa-netty:0.5.0' // netty jawampa
+    
+    implementation 'commons-pool:commons-pool:1.4' // PayUtil, DBManager
+    implementation 'commons-dbcp:commons-dbcp:1.4' // PayUtil, DBManager
+    implementation 'commons-net:commons-net:3.10.0'
+    implementation 'commons-io:commons-io:2.11.0' // IOUtils
+	implementation 'commons-codec:commons-codec:1.15'//Codec
+    
+    // APACHE TILES
+	implementation 'org.apache.tiles:tiles-extras:3.0.8'
+	implementation 'org.apache.tiles:tiles-servlet:3.0.8'
+	implementation 'org.apache.tiles:tiles-jsp:3.0.8'
+	
+	implementation 'com.google.code.gson:gson:2.9.0'
+	implementation 'com.ibm.icu:icu4j-localespi:74.2'
+	
+	implementation 'commons-codec:commons-codec:1.15'//Codec
+	
+	compileOnly 'org.projectlombok:lombok'
+	compileOnly 'javax.servlet:javax.servlet-api:4.0.1'
+	
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
+	annotationProcessor 'org.projectlombok:lombok'
+	providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
