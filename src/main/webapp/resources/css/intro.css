@@ -1,0 +1,6 @@
+.intro-wrap { position: relative; height: 100vh; }
+.intro-wrap::after { position: absolute; top: 0; left: 0; content: ""; display: inline-block; width: 100%; height: 0.2rem; background: linear-gradient(to right, #FF5776, #FF944C); }
+.intro-wrap header .app-tit { text-align: center; padding-top: 37.1875vh; }
+.intro-wrap header .app-tit > img { width: 20.3rem; }
+.intro-wrap header .app-tit > span { display: block; margin-top: 1.2rem; font-size: 2.2rem; font-weight: 400; }
+.intro-wrap footer address { width: 100%; position: absolute; left: 50%; transform: translateX(-50%); bottom: 6.25vh; text-align: center; }

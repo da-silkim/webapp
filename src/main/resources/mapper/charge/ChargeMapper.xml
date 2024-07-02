@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?> <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.bluenetworks.webapp.app.charge.mapper.AppChargeMapper">
+    <select id="chargeList" resultType="java.util.HashMap">
+        /* com.bluenetworks.webapp.app.charge.mapper.AppChargeMapper.chargeList */
+        SELECT
+            IFNULL(( SELECT name FROM TINF_CS A WHERE A.id = CHARGE.csId ),'테스트') AS csName
+            , DATE_FORMAT(CHARGE.begin,'%m') AS month
+            , COUNT(*) AS chargeCount
+            , MAX(CHARGE.endMeterPower - CHARGE.beginMeterPower)/1000 AS chargeAmount
+            , date_format( (CHARGE.begin) , '%Y-%m-%d %H:%i:%s' ) as begin
+            , date_format( (CHARGE.end) , '%Y-%m-%d %H:%i:%s' ) as end
+            , CASE WHEN CHARGE.cpType != '04' THEN totalPrice
+            ELSE TRUNCATE(totalPrice/1000, 0)
+            END AS totalPrice
+            , TIMESTAMPDIFF( minute , date_format( CHARGE.begin , '%Y-%m-%d %H:%i' ) , date_format( CHARGE.end , '%Y-%m-%d %H:%i' ) ) AS unixTime
+            , IFNULL(CHARGE.discountPrice,0) AS discountPrice
+            , IFNULL(CHARGE.paymentPrice,0) AS paymentPrice
+        FROM (
+            SELECT HIST.*, MODEL.cpType
+                , IF( CASE WHEN MODEL.cpType = '04' THEN TRUNCATE(HIST.totalPrice/1000, 0) - IFNULL(PAYMENT.authAmount, TRUNCATE(HIST.totalPrice/1000, 0))
+                ELSE HIST.totalPrice - IFNULL(PAYMENT.authAmount, HIST.totalPrice)
+                END  <![CDATA[<]]> 0 , 0, CASE  WHEN MODEL.cpType = '04' THEN TRUNCATE(HIST.totalPrice/1000, 0) - IFNULL(PAYMENT.authAmount, TRUNCATE(HIST.totalPrice/1000, 0))
+                ELSE HIST.totalPrice - IFNULL(PAYMENT.authAmount, HIST.totalPrice)
+                END) AS discountPrice
+                , CAST(PAYMENT.authAmount AS UNSIGNED) AS paymentPrice
+            FROM (
+                SELECT A.idToken
+                FROM TCSP_AUTH A
+                WHERE customerId = #{id}
+                ) CARD
+            INNER JOIN TCSP_CHARGE_HIST HIST ON (CARD.idToken = HIST.idTag )
+            INNER JOIN TINF_CPMODEL MODEL ON HIST.modelId = MODEL.id
+            LEFT OUTER JOIN TCSP_CHARGE_PAYMENTINFO PAYMENT
+                ON HIST.csId = PAYMENT.csId
+                AND HIST.cpId = PAYMENT.cpId
+                AND HIST.modelId = PAYMENT.modelId
+                AND HIST.connectorId = PAYMENT.connectorId
+                AND HIST.transactionId = PAYMENT.transactionId
+            ) CHARGE
+        WHERE DATE_FORMAT(CHARGE.begin,'%Y-%m-%d') BETWEEN #{begin} AND #{end}
+        GROUP BY CHARGE.transactionId
+        ORDER BY month DESC, CHARGE.end DESC
+    </select>
+
+    <select id="selectPkId" resultType="ResultMap">
+        /* com.bluenetworks.webapp.app.charge.mapper.AppChargeMapper.selectPkId */
+        SELECT
+            CS.id as csPkId
+             , CP.id as cpPkId
+             , CS.priceCode
+             , SC.pricePolicy
+        FROM TINF_CS_CP CSCP
+             INNER JOIN TINF_CP CP
+                ON CSCP.cpId = CP.id
+             INNER JOIN TINF_CS CS
+                ON CSCP.csId = CS.id
+             INNER JOIN TCSP_SERVICE_COMPANY SC
+                ON SC.id = CS.serviceCompanyId
+        WHERE CP.cpId = #{cpId}
+    </select>
+
+    <select id="chargerDetail" resultType="java.util.HashMap">
+        /* com.bluenetworks.webapp.app.charge.mapper.AppChargeMapper.chargerDetail */
+        SELECT
+               CS.id as csPkId
+             , CS.csId
+             , CS.name as stationName
+             , CS.longitude
+             , CS.latitude
+             , CS.serviceCompanyId
+             , CP.id as cpPkId
+             , CP.cpId
+             , CP.name as chargerName
+             , CP.chargeBoxSerialNumber
+             , CPMODEL.id as cpModelId
+             , CPMODEL.name as chargerModelName
+             , CS.priceCode as csPriceCode
+             , CPP.priceCode as policyPriceCode
+             , FN_GET_UNIT_PRICE_INFO(CS.id, CP.id, CPMODEL.id, '3', DATE_FORMAT(NOW(),'%Y%m%d')) unitPrice
+        FROM TINF_CS_CP CSCP
+            INNER JOIN TINF_CP CP
+                ON CSCP.cpId = CP.id
+            INNER JOIN TINF_CPMODEL CPMODEL
+                ON CSCP.modelId = CPMODEL.id
+            INNER JOIN TINF_CS CS
+                ON CSCP.csId = CS.id
+            INNER JOIN TCSP_CHARGE_PRICE_POLICY CPP
+                ON CPP.priceCode = CS.priceCode
+        WHERE CSCP.csId = #{csPkId}
+        AND CSCP.cpId = #{cpPkId}
+        AND CPP.hour = (SELECT HOUR(NOW()) AS currentHour)
+    </select>
+    
+    <select id="selectCharging" resultType="java.util.HashMap">
+        /* com.bluenetworks.webapp.app.charge.mapper.AppChargeMapper.selectCharging */
+        SELECT
+               CS.id as csPkId
+             , CS.csId
+             , CS.name as stationName
+             , CS.longitude
+             , CS.latitude
+             , CS.serviceCompanyId
+             , CP.id as cpPkId
+             , CP.cpId
+             , CP.name as chargerName
+             , CPMODEL.id as cpModelId
+             , CPMODEL.name as chargerModelName
+             , CS.priceCode as csPriceCode
+             , CPP.priceCode as policyPriceCode
+             , FN_GET_UNIT_PRICE_INFO(CS.id, CP.id, CPMODEL.id, '3', DATE_FORMAT(NOW(),'%Y%m%d')) unitPrice
+        FROM TINF_CS_CP CSCP
+            INNER JOIN TINF_CP CP
+                ON CSCP.cpId = CP.id
+            INNER JOIN TINF_CPMODEL CPMODEL
+                ON CSCP.modelId = CPMODEL.id
+            INNER JOIN TINF_CS CS
+                ON CSCP.csId = CS.id
+            INNER JOIN TCSP_CHARGE_PRICE_POLICY CPP
+                ON CPP.priceCode = CS.priceCode
+        WHERE CSCP.csId = #{csPkId}
+        AND CSCP.cpId = #{cpPkId}
+        AND CPP.hour = (SELECT HOUR(NOW()) AS currentHour)
+    </select>
+
+    <select id="selectConnector" resultType="ResultMap">
+        /* com.bluenetworks.webapp.app.charge.mapper.AppChargeMapper.selectConnector */
+        SELECT A.connectorId
+             , A.typeId
+             , B.name
+        FROM TINF_CP_CONNECTOR A
+            INNER JOIN TINF_CONNECTOR_TYPE B
+            ON (A.typeId = B.id)
+        WHERE A.cpId = #{cpPkId}
+		AND A.modelId = #{cpModelId}
+        <if test="connectorId != null">
+		AND A.connectorId = #{connectorId}
+        </if>
+    </select>
+
+    <select id="selectIdToken" resultType="String">
+        /* com.bluenetworks.webapp.app.charge.mapper.AppChargeMapper.selectIdToken */
+        SELECT idToken FROM TCSP_AUTH where customerId = #{customerId} AND useYn = 'Y'
+    </select>
+
+    <!-- ***원격 충전 관련 쿼리*** -->
+    <select id="selectChargingNow" resultType="int">
+        /* com.bluenetworks.webapp.app.charge.mapper.AppChargeMapper.selectChargingNow */
+        SELECT
+            count(*)
+        FROM TINF_CURRENT_TX
+        WHERE idTag = #{idTag}
+           or (csId = #{popCsId} and cpId = #{popId} and modelId = #{modelId} and connectorId = #{connectorId})
+    </select>
+
+    <!-- 원격 충전전 cp상태 체크 : 충전기와 연결되어 있는 상태 여부 확인 -->
+    <select id="selectCpConnectionInfo" parameterType="map" resultType="String">
+        /* com.bluenetworks.webapp.app.charge.mapper.AppChargeMapper.selectCpConnectionInfo */
+        SELECT connectionYN
+        FROM TINF_CP_STATUS
+        WHERE csId = #{popCsId}
+          AND cpId = #{popId}
+          AND modelId = #{modelId}
+    </select>
+
+    <!-- 충전기 타입 조회 -->
+    <select id="selectTransactionId" parameterType="map" resultType="Integer">
+        /* com.bluenetworks.webapp.app.charge.mapper.AppChargeMapper.selectTransactionId */
+        SELECT
+            TX.transactionId
+        FROM TCSP_CUSTOMER C
+             INNER JOIN TCSP_AUTH A
+                ON C.id = A.customerId
+             INNER JOIN TINF_CURRENT_TX TX
+                ON A.idToken = TX.idTag
+        WHERE C.id = #{customerId}
+        order by TX.meterValueTimestamp desc
+            limit 1
+    </select>
+    <!-- ***원격 충전 관련 쿼리*** -->
+
+    <!-- 충전기 타입 조회 -->
+    <select id="selectChargerType" parameterType="map" resultType="String">
+        /* com.bluenetworks.webapp.app.charge.mapper.AppChargeMapper.selectChargerType */
+        SELECT * FROM TINF_CPMODEL where id = #{modelId} and serviceCompanyId = #{companyId}
+    </select>
+
+    <!-- 충전현황 조회 -->
+    <select id="selectChargingInfo" parameterType="map" resultType="ResultMap">
+        /* com.bluenetworks.webapp.app.charge.mapper.AppChargeMapper.selectChargingInfo */
+        SELECT
+                TX.csId, TX.cpId, TX.modelId, TX.connectorId, TX.transactionId
+              , TX.startTimestamp, TX.idTag, TX.soc
+              , CASE WHEN TX.chargePower <![CDATA[<=]]> 0 THEN '0' ELSE round(TX.chargePower/1000, 2)  END chargePower
+              , TX.meterValueTimestamp
+              , TX.currentPower, TX.currentA, TX.chargeBoxSerialNumber, TX.meterStart, TX.meterStart
+              , CS.serviceCompanyId
+              , CS.name AS stationName
+              , CP.name AS chargerName
+              , CP.id AS cpId
+              , (SELECT MODEL.chargeSpeedType FROM TINF_CPMODEL MODEL INNER JOIN TINF_CP CHARGE ON MODEL.id = CHARGE.modelId WHERE CHARGE.id = CP.id) AS chargeSpeedType
+              , (SELECT SC.pricePolicy FROM TCSP_SERVICE_COMPANY SC WHERE SC.id = CS.serviceCompanyId) AS pricePolicy
+        FROM TCSP_CUSTOMER C
+             INNER JOIN TCSP_AUTH A
+                ON C.id = A.customerId
+             INNER JOIN TINF_CURRENT_TX TX
+                ON A.idToken = TX.idTag
+             INNER JOIN TINF_CS CS
+                ON CS.id = TX.csId
+             INNER JOIN TINF_CP CP
+                ON CP.id = TX.cpId
+        WHERE C.id = #{customerId}
+        order by TX.meterValueTimestamp desc
+        limit 1
+    </select>
+
+    <!-- 커넥터 연결 여부 조회 -->
+    <select id="selectPreparingStartYn" parameterType="map" resultType="String">
+        /* com.bluenetworks.webapp.app.charge.mapper.AppChargeMapper.selectPreparingStartYn */
+        SELECT recvPayload FROM TLOG_MESSAGE
+        WHERE recvURL = #{cpId}
+            AND recvMessage = 'StatusNotification'
+            AND logTimestamp BETWEEN NOW() - INTERVAL 1 HOUR AND NOW()
+        order by logTimestamp
+        desc limit 1
+    </select>
+
+    <!-- 충전 시작 여부 조회 -->
+    <select id="selectChargingStartYn" parameterType="map" resultType="int">
+        /* com.bluenetworks.webapp.app.charge.mapper.AppChargeMapper.selectChargingStartYn */
+        SELECT
+            count(*)
+        FROM TCSP_CUSTOMER C
+             INNER JOIN TCSP_AUTH A
+                ON C.id = A.customerId
+             INNER JOIN TINF_CURRENT_TX TX
+                ON A.idToken = TX.idTag
+        WHERE C.id = #{customerId}
+    </select>
+</mapper>

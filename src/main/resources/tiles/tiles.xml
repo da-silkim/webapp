@@ -1,0 +1,112 @@
+<!DOCTYPE tiles-definitions PUBLIC
+		"-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN"
+		"http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+
+<tiles-definitions>
+
+	<!-- 앱 레이아웃(서브)  -->
+	<definition name="layout-tiles" template="/WEB-INF/app/tiles/layout.jsp">
+		<put-attribute name="header" value="/WEB-INF/app/tiles/header.jsp" />
+		<put-attribute name="top" value="/WEB-INF/app/tiles/top.jsp" />
+		<put-attribute name="content"   value="" />
+		<put-attribute name="navi" value="/WEB-INF/app/tiles/navi.jsp" />
+		<put-attribute name="footer" value="/WEB-INF/app/tiles/footer.jsp" />
+	</definition>
+
+	<definition name="*.app_tiles" extends="layout-tiles">
+		<put-attribute name="content" value="/WEB-INF/{1}.jsp" />
+	</definition>
+
+	<definition name="*/*.app_tiles" extends="layout-tiles">
+		<put-attribute name="content" value="/WEB-INF/{1}/{2}.jsp" />
+	</definition>
+
+	<definition name="*/*/*.app_tiles" extends="layout-tiles">
+		<put-attribute name="content" value="/WEB-INF/{1}/{2}/{3}.jsp" />
+	</definition>
+
+	<!-- 앱 레이아웃(not Footer)  Start -->
+	<definition name="layout-tiles_footer" template="/WEB-INF/app/tiles/layout.jsp">
+		<put-attribute name="header" value="/WEB-INF/app/tiles/header.jsp" />
+		<put-attribute name="top" value="/WEB-INF/app/tiles/top.jsp" />
+		<put-attribute name="content"   value="" />
+		<put-attribute name="navi" value="/WEB-INF/app/tiles/navi.jsp" />
+		<put-attribute name="footer" value="/WEB-INF/app/tiles/footer_no.jsp" />
+	</definition>
+
+	<definition name="*.app_tiles_footer" extends="layout-tiles_footer">
+		<put-attribute name="content" value="/WEB-INF/{1}.jsp" />
+	</definition>
+
+	<definition name="*/*.app_tiles_footer" extends="layout-tiles_footer">
+		<put-attribute name="content" value="/WEB-INF/{1}/{2}.jsp" />
+	</definition>
+
+	<definition name="*/*/*.app_tiles_footer" extends="layout-tiles_footer">
+		<put-attribute name="content" value="/WEB-INF/{1}/{2}/{3}.jsp" />
+	</definition>
+	<!-- 앱 레이아웃(not Footer)  End -->
+	
+	<!-- 앱 레이아웃(메인) -->
+	<definition name="main-layout-tiles" template="/WEB-INF/app/tiles/layout_main.jsp">
+		<put-attribute name="header" value="/WEB-INF/app/tiles/header.jsp" />
+		<put-attribute name="content"   value="" />
+		<put-attribute name="navi" value="/WEB-INF/app/tiles/navi.jsp" />
+		<put-attribute name="footer" value="/WEB-INF/app/tiles/footer.jsp" />
+	</definition>
+
+	<definition name="*.app_main_tiles" extends="main-layout-tiles">
+		<put-attribute name="content" value="/WEB-INF/{1}.jsp" />
+	</definition>
+
+	<definition name="*/*.app_main_tiles" extends="main-layout-tiles">
+		<put-attribute name="content" value="/WEB-INF/{1}/{2}.jsp" />
+	</definition>
+
+	<definition name="*/*/*.app_main_tiles" extends="main-layout-tiles">
+		<put-attribute name="content" value="/WEB-INF/{1}/{2}/{3}.jsp" />
+	</definition>
+
+	<!-- PC 레이아웃(서브)  -->
+	<definition name="layout2-tiles" template="/WEB-INF/web/tiles/layout.jsp">
+		<put-attribute name="header" value="/WEB-INF/web/tiles/header.jsp" />
+		<put-attribute name="skip"   value="/WEB-INF/web/tiles/skip.jsp" />
+		<put-attribute name="navi" value="/WEB-INF/web/navi" />
+		<put-attribute name="content"   value="" />
+		<put-attribute name="footer" value="/WEB-INF/web/tiles/footer.jsp" />
+	</definition>
+
+	<definition name="*.web_tiles" extends="layout2-tiles">
+		<put-attribute name="content" value="/WEB-INF/{1}.jsp" />
+	</definition>
+
+	<definition name="*/*.web_tiles" extends="layout2-tiles">
+		<put-attribute name="content" value="/WEB-INF/{1}/{2}.jsp" />
+	</definition>
+
+	<definition name="*/*/*.web_tiles" extends="layout2-tiles">
+		<put-attribute name="content" value="/WEB-INF/{1}/{2}/{3}.jsp" />
+	</definition>
+
+	<!-- PC 레이아웃(메인) -->
+	<definition name="main-layout2-tiles" template="/WEB-INF/web/tiles/layout_main.jsp">
+		<put-attribute name="header" value="/WEB-INF/web/tiles/header.jsp" />
+		<put-attribute name="skip"   value="/WEB-INF/web/tiles/skip.jsp" />
+		<put-attribute name="navi" value="/WEB-INF/web/navi" />
+		<put-attribute name="content"   value="" />
+		<put-attribute name="footer" value="/WEB-INF/web/tiles/footer.jsp" />
+	</definition>
+
+	<definition name="*.web_main_tiles" extends="main-layout2-tiles">
+		<put-attribute name="content" value="/WEB-INF/{1}.jsp" />
+	</definition>
+
+	<definition name="*/*.web_main_tiles" extends="main-layout2-tiles">
+		<put-attribute name="content" value="/WEB-INF/{1}/{2}.jsp" />
+	</definition>
+
+	<definition name="*/*/*.web_main_tiles" extends="main-layout2-tiles">
+		<put-attribute name="content" value="/WEB-INF/{1}/{2}/{3}.jsp" />
+	</definition>
+
+</tiles-definitions>

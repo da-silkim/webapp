@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?> <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" > 
+
+<mapper namespace="com.bluenetworks.webapp.app.main.mapper.AppMainMapper">
+
+    <select id="selectNoticeList" parameterType="map" resultType="map">
+		/* com.bluenetworks.webapp.app.main.mapper.AppMainMapper.selectNoticeList */
+        SELECT 	A.id, A.subject, A.content
+		FROM 	TSYS_NOTI_MGMT A
+		WHERE	A.delYn = 'N'
+		AND		A.typeCode = 'M'
+		AND		A.fixYn = 'Y'
+		AND		now() between A.startEventDate AND A.endEventDate
+		ORDER BY A.fixOrder
+    </select>
+    
+    <select id="selectPeriStationList" parameterType="map" resultType="map">
+		/* com.bluenetworks.webapp.app.main.mapper.AppMainMapper.selectPeriStationList */
+        SELECT 	id, csId, name, longitude, latitude, 'Y' as chargeAble, FN_GET_CS_STATUS(A.id) AS csStatus
+        		, IFNULL(ROUND(FN_GET_DISTANCE(A.id, #{longitude}, #{latitude}), 1), 9999999) as distance
+		FROM TINF_CS A
+        ORDER BY distance
+		limit 2
+    </select>
+    
+    <select id="selectMyStationList" parameterType="map" resultType="map">
+		/* com.bluenetworks.webapp.app.main.mapper.AppMainMapper.selectMyStationList */
+		SELECT 	B.id, B.csId, B.name, longitude, latitude, 'Y' as chargeAble, FN_GET_CS_STATUS(B.id) AS csStatus
+				, IFNULL(ROUND(FN_GET_DISTANCE(B.id, #{longitude}, #{latitude}), 1), 9999999) as distance
+		FROM 	TCSP_FAVORITES A INNER JOIN TINF_CS B ON A.csId = B.id
+		WHERE 	A.customerId = #{customerId}
+		limit 2
+    </select>
+    
+    <select id="selectPaymentInfo" parameterType="map" resultType="map">
+		/* com.bluenetworks.webapp.app.main.mapper.AppMainMapper.selectPaymentInfo */
+		SELECT (select COUNT(1)
+				from TCSP_CUSTOMER_CARD where customerId = #{customerId}) as cardCnt
+				, (select COUNT(1)
+				from TCSP_CUSTOMER_CARD where customerId = #{customerId} AND mainYn = 'Y') as mainCnt
+		FROM DUAL
+    </select>
+
+	<select id="selectMonthDashboard" parameterType="map" resultType="ResultMap">
+		/* com.bluenetworks.webapp.app.main.mapper.AppMainMapper.selectMonthDashboard */
+		SELECT
+			  IFNULL(ROUND(CHARGE.power/1000,2), 0) AS power
+			, CHARGE.totalPrice
+		FROM TCSP_CHARGE_HIST CHARGE
+			INNER JOIN TCSP_AUTH AUTH
+			ON CHARGE.idTag = AUTH.idToken
+		WHERE AUTH.customerId = #{customerId}
+		  AND DATE_FORMAT(CHARGE.begin,'%Y-%m') LIKE #{yearMonth}
+	</select>
+</mapper>

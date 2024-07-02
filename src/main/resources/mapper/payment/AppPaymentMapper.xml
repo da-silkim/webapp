@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?> <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" > 
+
+<mapper namespace="com.bluenetworks.webapp.app.payment.mapper.AppPaymentMapper">
+
+	<update id="updateBillTokenMain" parameterType="java.util.HashMap">
+    	UPDATE 	TCSP_CUSTOMER_CARD
+    	SET 	mainYn = 'N'
+    	WHERE 	customerId = #{customerId}
+    </update>
+
+	<update id="updateBillTokenMainOne" parameterType="java.util.HashMap">
+    	UPDATE 	TCSP_CUSTOMER_CARD
+    	SET 	mainYn = #{mainYn}
+    	WHERE 	customerId = #{customerId}
+    	AND		id = #{cardId}
+    </update>
+    
+	<delete id="deleteBillkeyReq" parameterType="java.util.HashMap">
+    	DELETE 	FROM TCSP_CUSTOMER_CARD
+    	WHERE 	customerId = #{customerId}
+    	AND		id = ${cardId}
+    </delete>
+    
+    <select id="selectPaymentOne" parameterType="java.util.HashMap" resultType="org.json.simple.JSONObject">
+		SELECT  billTokenKey
+		FROM 	TCSP_CUSTOMER_CARD
+		WHERE 	customerId = #{customerId}
+		AND		billTokenKey = #{billTokenKey}
+	</select>
+	
+    
+	<insert id="insertBillToken" parameterType="java.util.HashMap">
+    	INSERT INTO TCSP_CUSTOMER_CARD (customerId, issuerCardCd, billTokenKey, cardNo, validYymm, cardAlias, mainYn, regDt, regId)
+		VALUES (#{customerId}, #{issuerCardCd},  #{billTokenKey}, #{cardNo} , #{validYymm}, #{cardAlias}, #{mainYn}, now(), #{customerId})		
+    </insert>
+    
+    <select id="selectPaymentList" parameterType="java.util.HashMap" resultType="org.json.simple.JSONObject">
+		/* com.bluenetworks.webapp.app.payment.mapper.AppPaymentMapper.selectPaymentList */
+		SELECT 	@rownum:=@rownum+1 as rownum
+				, id AS cardId
+				, billTokenKey
+				, CASE WHEN mainYn = 'Y' THEN CONCAT(cardAlias, '(주카드)')  ELSE cardAlias END AS cardAlias
+				, CASE issuerCardCd WHEN '01' THEN 'bc' WHEN '02' THEN 'kb' WHEN '03' THEN 'kakao' WHEN '04' THEN 'samsung' 
+						WHEN '05' THEN 'epost' WHEN '06' THEN 'shinhan' WHEN '07' THEN 'hyundai' WHEN '08' THEN 'lotte' WHEN '12' THEN 'nh' else 'etc'
+                        end AS issuerCardCd
+				, FN_GET_FORMATTER(cardNo, 'C') AS cardNo
+				, mainYn
+		FROM 	TCSP_CUSTOMER_CARD
+		WHERE 	(@rownum:=0)=0
+		AND		customerId = #{customerId}
+		ORDER BY CASE mainYn WHEN 'Y' THEN 1 ELSE 2 END , regDt DESC
+	</select>
+
+	<select id="selectIdToken" resultType="String">
+		SELECT
+			idToken
+		FROM TCSP_CUSTOMER C
+			INNER JOIN TCSP_AUTH A
+			ON C.id = A.customerId
+		WHERE C.userId = #{userId}
+		limit 1
+	</select>
+
+	<select id="selectPaymentHistoryList" resultType="java.util.HashMap">
+		SELECT
+			   DATE_FORMAT(PAY.authTimestamp, '%Y-%m-%d %H:%i:%s') AS authTimestamp
+			 , PAY.authAmount
+			 , CS.name
+			 , IFNULL(ROUND(CHARGE.power/1000,2), 0) AS power
+		FROM TCSP_CHARGE_HIST CHARGE
+			 INNER JOIN TCSP_CHARGE_PAYMENTINFO PAY
+				ON PAY.transactionId = CHARGE.transactionId
+			 INNER JOIN TCSP_AUTH AUTH
+				ON CHARGE.idTag = AUTH.idToken
+			 INNER JOIN TINF_CS CS
+				ON CHARGE.csId = CS.id
+		WHERE AUTH.idToken = #{idToken}
+		<if test="paymentDate1 != null and paymentDate1 != '' and paymentDate2 != null and paymentDate2 != ''">
+			AND PAY.authTimestamp BETWEEN STR_TO_DATE(REPLACE(#{paymentDate1},'-',''),'%Y%m%d') AND DATE_ADD(STR_TO_DATE(REPLACE(#{paymentDate2},'-',''),'%Y%m%d'), INTERVAL 1 DAY)
+		</if>
+		ORDER BY PAY.authTimestamp DESC
+		LIMIT #{startRow}, #{pageCount}
+	</select>
+
+	<select id="selectPaymentHistoryCount" resultType="int">
+		SELECT count(*)
+		FROM TCSP_CHARGE_HIST CHARGE
+		INNER JOIN TCSP_CHARGE_PAYMENTINFO PAY
+		ON PAY.transactionId = CHARGE.transactionId
+		INNER JOIN TCSP_AUTH AUTH
+		ON CHARGE.idTag = AUTH.idToken
+		INNER JOIN TINF_CS CS
+		ON CHARGE.csId = CS.id
+		WHERE AUTH.idToken = #{idToken}
+		<if test="paymentDate1 != null and paymentDate1 != '' and paymentDate2 != null and paymentDate2 != ''">
+			AND PAY.authTimestamp BETWEEN STR_TO_DATE(REPLACE(#{paymentDate1},'-',''),'%Y%m%d') AND DATE_ADD(STR_TO_DATE(REPLACE(#{paymentDate2},'-',''),'%Y%m%d'), INTERVAL 1 DAY)
+		</if>
+	</select>
+</mapper>

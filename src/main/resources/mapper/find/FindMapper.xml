@@ -1,0 +1,617 @@
+<?xml version="1.0" encoding="UTF-8"?> <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" > 
+
+<mapper namespace="com.bluenetworks.webapp.app.find.mapper.AppFindMapper">
+    <select id="selectServiceCompanyId" resultType="ResultMap">
+        select id, pricePolicy from TCSP_SERVICE_COMPANY WHERE id = 1
+    </select>
+
+    <select id="selectStationList" resultType="ResultMap">
+        /* com.bluenetworks.webapp.app.find.mapper.AppFindMapper.selectStationList */
+        SELECT
+                  A.id
+                , A.serviceCompanyId
+                , A.csId
+                , A.name
+                , A.zipcode
+                , A.zone
+                , A.city
+                , A.address
+                , A.longitude
+                , A.latitude
+                , A.openStartTime
+                , A.openEndTime
+                , A.parkingFee
+                , A.parkingFeeYn
+                , A.priceCode
+                , FN_GET_CS_STATUS(id) AS csStatus
+        FROM TINF_CS A
+    </select>
+
+    <select id="selectStationDetail" resultType="ResultMap">
+        /* com.bluenetworks.webapp.app.find.mapper.AppFindMapper.selectStationDetail */
+        SELECT X.* FROM (
+        SELECT A.id
+            , A.serviceCompanyId
+            , A.csId
+            , A.name
+            , A.zipcode
+            , A.zone
+            , A.city
+            , A.address
+            , A.longitude
+            , A.latitude
+            , ROUND(FN_GET_DISTANCE(A.id, #{longitude}, #{latitude}), 1) as distance
+            , A.openStartTime
+            , A.openEndTime
+            , A.parkingFee
+            , A.parkingFeeYn
+            , A.priceCode
+            , B.name AS serviceCompanyName
+            , FN_GET_CODE_NM(#{serviceCompanyId},'CPMODEL003','01','ko') AS cpType1
+            , C.cpCount1
+            , FN_GET_CODE_NM(#{serviceCompanyId},'CPMODEL003','02','ko') AS cpType2
+            , C.cpCount2
+            , FN_GET_CODE_NM(#{serviceCompanyId},'CPMODEL003','03','ko') AS cpType3
+            , C.cpCount3
+            , FN_GET_CODE_NM(#{serviceCompanyId},'CPMODEL003','04','ko') AS cpType4
+            , C.cpCount4
+            <foreach collection="connectorList" item="item" index="index">
+                , D.connCount#{index}
+            </foreach>
+            ,CONCAT(A.address," ",A.addressDetail) AS fullAddr
+            ,(SELECT AA.id FROM TCSP_FAVORITES AA
+            WHERE AA.customerId = #{customerId} AND AA.csId = A.id) AS favState
+            , FN_GET_CS_STATUS(A.id) AS csStatus
+        <if test="pricePolicy == 'B'.toString()">
+            , ( SELECT price FROM TCSP_CHARGE_PRICE
+            WHERE useYN = 'Y'
+            AND applyDate  <![CDATA[<=]]> NOW()
+            AND companyId = A.serviceCompanyId
+            ORDER BY applyDate DESC
+            LIMIT 1 ) AS cpPrice
+        </if>
+        <if test="pricePolicy == 'A'.toString()">
+            <if test="priceType == 1">
+                , ( SELECT unitprice1 FROM TCSP_CHARGE_PRICE_POLICY
+                WHERE companyId = A.serviceCompanyId
+                AND priceCode = A.priceCode
+                AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS cpPrice
+                , ( SELECT noMemUnitprice1 FROM TCSP_CHARGE_PRICE_POLICY
+                WHERE companyId = A.serviceCompanyId
+                AND priceCode = A.priceCode
+                AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS noMemUnitprice
+            </if>
+            <if test="priceType == 2">
+                , ( SELECT unitprice2 FROM TCSP_CHARGE_PRICE_POLICY
+                WHERE companyId = A.serviceCompanyId
+                AND priceCode = A.priceCode
+                AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS cpPrice
+                , ( SELECT noMemUnitprice2 FROM TCSP_CHARGE_PRICE_POLICY
+                WHERE companyId = A.serviceCompanyId
+                AND priceCode = A.priceCode
+                AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS noMemUnitprice
+            </if>
+            <if test="priceType == 3">
+                , ( SELECT unitprice3 FROM TCSP_CHARGE_PRICE_POLICY
+                WHERE companyId = A.serviceCompanyId
+                AND priceCode = A.priceCode
+                AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS cpPrice
+                , ( SELECT noMemUnitprice3 FROM TCSP_CHARGE_PRICE_POLICY
+                WHERE companyId = A.serviceCompanyId
+                AND priceCode = A.priceCode
+                AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS noMemUnitprice
+            </if>
+        </if>
+        FROM TINF_CS A
+        INNER JOIN TCSP_SERVICE_COMPANY B
+        ON (A.serviceCompanyId = B.id)
+
+        LEFT OUTER JOIN(SELECT cscp.csId,
+        COUNT(CASE WHEN model.cpType = '01' THEN 1 END) AS cpCount1
+        , COUNT(CASE WHEN model.cpType = '02' THEN 1 END) AS cpCount2
+        , COUNT(CASE WHEN model.cpType = '03' THEN 1 END) AS cpCount3
+        , COUNT(CASE WHEN model.cpType = '04' THEN 1 END) AS cpCount4
+
+        FROM TINF_CS_CP cscp
+        LEFT OUTER JOIN TINF_CPMODEL model
+        ON cscp.modelId = model.id
+        GROUP BY cscp.csId) C
+        ON (A.id = C.csId)
+
+        LEFT OUTER JOIN(SELECT cscp.csId
+            <foreach collection="connectorList" item="item" index="index">
+                , COUNT(CASE WHEN conn.typeId = #{item.id} THEN 1 END) AS connCount#{index}
+            </foreach>
+        FROM TINF_CS_CP cscp
+        LEFT OUTER JOIN TINF_CP_CONNECTOR conn
+        ON cscp.cpId = conn.cpId
+        GROUP BY cscp.csId) D
+        ON (A.id = D.csId)
+        WHERE A.pubYn = 'Y'
+        AND A.serviceCompanyId = #{serviceCompanyId}
+        AND A.id = #{csId}
+        ) X
+    </select>
+
+    <select id="searchCsList" resultType="ResultMap">
+        /* com.bluenetworks.webapp.app.find.mapper.AppFindMapper.searchCsList */
+        SELECT X.* FROM (
+        SELECT A.id
+            , A.serviceCompanyId
+            , A.csId
+            , A.name
+            , A.zipcode
+            , A.zone
+            , A.city
+            , A.address
+            , A.longitude
+            , A.latitude
+            , ROUND(FN_GET_DISTANCE(A.id, #{longitude}, #{latitude}), 1) as distance
+            , A.openStartTime
+            , A.openEndTime
+            , A.parkingFee
+            , A.parkingFeeYn
+            , A.priceCode
+            , B.name AS serviceCompanyName
+            , FN_GET_CODE_NM('1','CPMODEL003','01','ko') AS cpType1
+            , C.cpCount1
+            , FN_GET_CODE_NM('1','CPMODEL003','02','ko') AS cpType2
+            , C.cpCount2
+            , FN_GET_CODE_NM('1','CPMODEL003','03','ko') AS cpType3
+            , C.cpCount3
+            , FN_GET_CODE_NM('1','CPMODEL003','04','ko') AS cpType4
+            , C.cpCount4
+            <foreach collection="connectorList" item="item" index="index">
+                , D.connCount#{index}
+            </foreach>
+            ,CONCAT(A.address," ",A.addressDetail) AS fullAddr
+            ,(SELECT AA.id FROM TCSP_FAVORITES AA
+                WHERE AA.customerId = #{customerId} AND AA.csId = A.id) AS favState
+            , FN_GET_CS_STATUS(A.id) AS csStatus
+            <if test="pricePolicy == 'B'.toString()">
+                , ( SELECT price FROM TCSP_CHARGE_PRICE
+                        WHERE useYN = 'Y'
+                        AND applyDate  <![CDATA[<=]]> NOW()
+                        AND companyId = A.serviceCompanyId
+                        ORDER BY applyDate DESC
+                        LIMIT 1 ) AS cpPrice
+            </if>
+            <if test="pricePolicy == 'A'.toString()">
+                <if test="priceType == 1">
+                    , ( SELECT unitprice1 FROM TCSP_CHARGE_PRICE_POLICY
+                            WHERE companyId = A.serviceCompanyId
+                            AND priceCode = A.priceCode
+                            AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS cpPrice
+                    , ( SELECT noMemUnitprice1 FROM TCSP_CHARGE_PRICE_POLICY
+                    WHERE companyId = A.serviceCompanyId
+                    AND priceCode = A.priceCode
+                    AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS noMemUnitprice
+                </if>
+                <if test="priceType == 2">
+                    , ( SELECT unitprice2 FROM TCSP_CHARGE_PRICE_POLICY
+                            WHERE companyId = A.serviceCompanyId
+                            AND priceCode = A.priceCode
+                            AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS cpPrice
+                    , ( SELECT noMemUnitprice2 FROM TCSP_CHARGE_PRICE_POLICY
+                            WHERE companyId = A.serviceCompanyId
+                            AND priceCode = A.priceCode
+                            AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS noMemUnitprice
+                </if>
+                <if test="priceType == 3">
+                    , ( SELECT unitprice3 FROM TCSP_CHARGE_PRICE_POLICY
+                            WHERE companyId = A.serviceCompanyId
+                            AND priceCode = A.priceCode
+                            AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS cpPrice
+                    , ( SELECT noMemUnitprice3 FROM TCSP_CHARGE_PRICE_POLICY
+                            WHERE companyId = A.serviceCompanyId
+                            AND priceCode = A.priceCode
+                            AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS noMemUnitprice
+                </if>
+            </if>
+        FROM TINF_CS A
+        INNER JOIN TCSP_SERVICE_COMPANY B
+        ON (A.serviceCompanyId = B.id)
+
+        LEFT OUTER JOIN(SELECT cscp.csId,
+                COUNT(CASE WHEN model.cpType = '01' THEN 1 END) AS cpCount1
+                , COUNT(CASE WHEN model.cpType = '02' THEN 1 END) AS cpCount2
+                , COUNT(CASE WHEN model.cpType = '03' THEN 1 END) AS cpCount3
+                , COUNT(CASE WHEN model.cpType = '04' THEN 1 END) AS cpCount4
+
+            FROM TINF_CS_CP cscp
+            LEFT OUTER JOIN TINF_CPMODEL model
+            ON cscp.modelId = model.id
+            GROUP BY cscp.csId) C
+        ON (A.id = C.csId)
+
+        LEFT OUTER JOIN(SELECT cscp.csId
+            <foreach collection="connectorList" item="item" index="index">
+                , COUNT(CASE WHEN conn.typeId = #{item.id} THEN 1 END) AS connCount#{index}
+            </foreach>
+            FROM TINF_CS_CP cscp
+            LEFT OUTER JOIN TINF_CP_CONNECTOR conn
+            ON cscp.cpId = conn.cpId
+            GROUP BY cscp.csId) D
+        ON (A.id = D.csId)
+        WHERE A.pubYn = 'Y'
+        AND A.serviceCompanyId = #{serviceCompanyId}
+        ) X
+        <if test="distance != null">
+            WHERE X.distance <![CDATA[<=]]> #{distance}
+            ORDER BY X.distance
+        </if>
+    </select>
+
+    <select id="selectMeStationList" resultType="ResultMap">
+        select
+            name
+             , daddr AS address
+             , useTime
+             , type
+             , SUBSTRING_INDEX(gps, ',', 1) AS latitude
+             , SUBSTRING_INDEX(gps, ',', -1) AS longitude
+             , status
+             , fee
+             , bid AS serviceCompanyId
+             , sid AS id
+        FROM TIF_RES_ME_CS_INFO
+        where bid = 'ME' AND delYn = 'N'
+    </select>
+
+    <select id="areaCsList" resultType="ResultMap">
+    /* com.bluenetworks.webapp.app.find.mapper.AppFindMapper.areaCsList */
+        SELECT A.id
+             , A.serviceCompanyId
+             , A.csId
+             , A.name
+             , A.zipcode
+             , A.zone
+             , A.city
+             , A.address
+             , A.longitude
+             , A.latitude
+             , A.openStartTime
+             , A.openEndTime
+             , A.parkingFee
+             , A.parkingFeeYn
+             , ROUND(FN_GET_DISTANCE(A.id, #{longitude}, #{latitude}), 1) as distance
+             , B.name AS serviceCompanyName
+             , FN_GET_CODE_NM('1','CPMODEL003','01','ko') AS cpType1
+             , C.cpCount1
+             , FN_GET_CODE_NM('1','CPMODEL003','02','ko') AS cpType2
+             , C.cpCount2
+             , FN_GET_CODE_NM('1','CPMODEL003','03','ko') AS cpType3
+             , C.cpCount3
+             , FN_GET_CODE_NM('1','CPMODEL003','04','ko') AS cpType4
+             , C.cpCount4
+            <foreach collection="connectorList" item="item" index="index">
+                , D.connCount#{index}
+            </foreach>
+             ,CONCAT(A.address," ",A.addressDetail) AS fullAddr
+             ,(SELECT AA.id FROM TCSP_FAVORITES AA
+               WHERE AA.customerId = #{customerId} AND AA.csId = A.id) AS favState
+             , FN_GET_CS_STATUS(A.id) AS csStatus
+        <if test="pricePolicy == 'B'.toString()">
+            , ( SELECT price FROM TCSP_CHARGE_PRICE
+                    WHERE useYN = 'Y'
+                    AND applyDate  <![CDATA[<=]]> NOW()
+                    AND companyId = A.serviceCompanyId
+                    ORDER BY applyDate DESC
+                LIMIT 1 ) AS cpPrice
+        </if>
+        <if test="pricePolicy == 'A'.toString()">
+            <if test="priceType == 1">
+                , ( SELECT unitprice1 FROM TCSP_CHARGE_PRICE_POLICY
+                        WHERE companyId = A.serviceCompanyId
+                        AND priceCode = A.priceCode
+                        AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS cpPrice
+                , ( SELECT noMemUnitprice1 FROM TCSP_CHARGE_PRICE_POLICY
+                        WHERE companyId = A.serviceCompanyId
+                        AND priceCode = A.priceCode
+                        AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS noMemUnitprice
+            </if>
+            <if test="priceType == 2">
+                , ( SELECT unitprice2 FROM TCSP_CHARGE_PRICE_POLICY
+                        WHERE companyId = A.serviceCompanyId
+                        AND priceCode = A.priceCode
+                        AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS cpPrice
+                , ( SELECT noMemUnitprice2 FROM TCSP_CHARGE_PRICE_POLICY
+                        WHERE companyId = A.serviceCompanyId
+                        AND priceCode = A.priceCode
+                        AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS noMemUnitprice
+            </if>
+            <if test="priceType == 3">
+                , ( SELECT unitprice3 FROM TCSP_CHARGE_PRICE_POLICY
+                        WHERE companyId = A.serviceCompanyId
+                        AND priceCode = A.priceCode
+                        AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS cpPrice
+                , ( SELECT noMemUnitprice3 FROM TCSP_CHARGE_PRICE_POLICY
+                        WHERE companyId = A.serviceCompanyId
+                        AND priceCode = A.priceCode
+                        AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS noMemUnitprice
+            </if>
+        </if>
+        FROM TINF_CS A
+            INNER JOIN TCSP_SERVICE_COMPANY B
+            ON (A.serviceCompanyId = B.id)
+
+            LEFT OUTER JOIN(SELECT cscp.csId,
+                                COUNT(CASE WHEN model.cpType = '01' THEN 1 END) AS cpCount1
+                              , COUNT(CASE WHEN model.cpType = '02' THEN 1 END) AS cpCount2
+                              , COUNT(CASE WHEN model.cpType = '03' THEN 1 END) AS cpCount3
+                              , COUNT(CASE WHEN model.cpType = '04' THEN 1 END) AS cpCount4
+                            FROM TINF_CS_CP cscp
+                                LEFT OUTER JOIN TINF_CPMODEL model
+                                ON cscp.modelId = model.id
+                            GROUP BY cscp.csId) C
+            ON (A.id = C.csId)
+
+            LEFT OUTER JOIN(SELECT cscp.csId
+                            <foreach collection="connectorList" item="item" index="index">
+                                , COUNT(CASE WHEN conn.typeId = #{item.id} THEN 1 END) AS connCount#{index}
+                            </foreach>
+                            FROM TINF_CS_CP cscp
+                                LEFT OUTER JOIN TINF_CP_CONNECTOR conn
+                                ON cscp.cpId = conn.cpId
+                            GROUP BY cscp.csId) D
+            ON (A.id = D.csId)
+        WHERE A.pubYn = 'Y'
+            AND A.serviceCompanyId = #{serviceCompanyId}
+        <if test="zone != null">
+            AND A.zone = #{zone}
+        </if>
+        <if test="searchWord != null">
+            AND ( A.name LIKE CONCAT('%',#{searchWord},'%')
+            OR A.address LIKE CONCAT('%',#{searchWord},'%') )
+        </if>
+        ORDER BY distance
+    </select>
+
+    <select id="searchCpType" resultType="ResultMap">
+        /* com.bluenetworks.webapp.app.find.mapper.AppFindMapper.searchCpType */
+        SELECT
+               cd AS id
+             , cdNm AS name
+        FROM TCO_CODE
+        WHERE groupCd = 'CPMODEL003'
+        AND useYn = 'Y'
+        ORDER BY cdOrder
+    </select>
+
+    <select id="searchConnector" resultType="ResultMap">
+        /* com.bluenetworks.webapp.app.find.mapper.AppFindMapper.searchConnector */
+        SELECT
+            cd AS id
+             , cdNm AS name
+        FROM TCO_CODE
+        WHERE groupCd = 'CONNTYPE'
+        AND useYn = 'Y'
+        ORDER BY cdOrder
+    </select>
+
+    <select id="searchServiceCompany" resultType="ResultMap">
+        /* com.bluenetworks.webapp.app.find.mapper.AppFindMapper.searchServiceCompany */
+        SELECT
+               id
+             , name
+        FROM TCSP_SERVICE_COMPANY
+        WHERE bizTypeCd = 'AC'
+    </select>
+
+    <select id="selectFavoritesId" resultType="int">
+        /* com.bluenetworks.webapp.app.find.mapper.AppFindMapper.selectFavoritesId */
+        SELECT
+            MAX(id)
+        FROM TCSP_FAVORITES
+    </select>
+
+    <insert id="favoriteInsert" useGeneratedKeys="true" keyProperty="id">
+        /* com.bluenetworks.webapp.app.find.mapper.AppFindMapper.favoriteInsert */
+        INSERT INTO TCSP_FAVORITES (
+              csId
+            , customerId
+        )
+        VALUES(
+              #{csId}
+            , #{id}
+        )
+    </insert>
+
+    <delete id="favoriteDelete">
+        /* com.bluenetworks.webapp.app.find.mapper.AppFindMapper.favoriteDelete */
+        DELETE FROM TCSP_FAVORITES
+        WHERE id = #{favId}
+    </delete>
+
+    <select id="csDetail" resultType="ResultMap">
+        /* com.bluenetworks.webapp.app.find.mapper.AppFindMapper.csDetail */
+        SELECT   A.cpId
+             ,A.modelId
+             ,A.id
+             ,A.name
+             ,A.zone
+             ,A.address
+             ,A.addressDetail
+             ,A.telephone
+             ,A.latitude
+             ,A.longitude
+             ,A.serviceCompanyName
+             ,A.operatingTimeStart
+             ,A.operatingTimeEnd
+             ,A.fullAddr
+             ,A.cpStateNm
+             ,A.connectName
+             ,A.parkingFee
+        FROM ( SELECT AA.modelId
+                    ,AA.cpId
+                    ,BB.id
+                    ,BB.name
+                    ,BB.zone
+                    ,BB.address
+                    ,BB.addressDetail
+                    ,BB.telephone
+                    ,BB.latitude
+                    ,BB.longitude
+                    ,IFNULL(FORMAT(BB.parkingFee, '#,#'),'주차요금 없음') parkingFee
+                    ,CC.name AS serviceCompanyName
+                    ,BB.openStartTime operatingTimeStart
+                    ,BB.openEndTime operatingTimeEnd
+                    ,CONCAT(BB.address," ",BB.addressDetail) AS fullAddr
+                    ,FN_CP_CONNECTOR_STATUS(EE.cpId) AS cpStateNm
+                    ,(SELECT GROUP_CONCAT(TCT.name SEPARATOR ',')
+                      FROM TINF_CONNECTOR_TYPE TCT
+                               INNER JOIN TINF_CP_CONNECTOR TCC ON(TCT.id = TCC.typeId)
+                      WHERE TCC.cpId = AA.cpId
+            ) AS connectName
+               FROM TINF_CS_CP AA
+                        INNER JOIN TINF_CS BB ON (AA.csId = BB.id)
+                        INNER JOIN TCSP_SERVICE_COMPANY CC ON (BB.serviceCompanyId = CC.id)
+                        LEFT OUTER JOIN TINF_POLICY_CSOP DD ON (BB.id = DD.csId AND BB.serviceCompanyId = DD.companyId)
+                        LEFT OUTER JOIN TINF_CP_STATUS EE ON (AA.cpId = EE.cpId)
+               GROUP BY BB.id
+             ) A
+        WHERE A.id = ${csId}
+    </select>
+
+    <select id="cpConnectorStatusList" resultType="ResultMap">
+        /* com.bluenetworks.webapp.app.find.mapper.AppFindMapper.cpConnectorStatusList */
+        SELECT 	cp.csId
+                , cp.modelId
+                , conn.connectorId
+                , IFNULL(A.availibility, 2) AS availibility
+                , IFNULL(C.id, 0) AS connectorTypeId
+          		,  (SELECT cdNm FROM TCO_CODE WHERE cd = C.id AND groupCd = 'CONNTYPE') connectorName
+                , CASE WHEN (D.connectionYN = 'N' OR D.connectionYN IS NULL) THEN '사용불가'
+	                ELSE CASE WHEN A.operating = 1 THEN '사용가능'
+	                WHEN A.operating = 2 THEN '대기'
+	                WHEN A.operating = 3 THEN '충전'
+	                WHEN A.operating = 4 THEN '중지'
+	                WHEN A.operating = 5 THEN '중지'
+	                WHEN A.operating = 6 THEN '충전종료'
+	                WHEN A.operating = 7 THEN '예약중'
+	                WHEN A.operating = 8 THEN '사용불가'
+	                WHEN A.operating = 9 THEN '고장'
+	                END
+	                END AS status
+                , IFNULL((SELECT soc
+                            FROM TINF_CURRENT_TX
+                            WHERE csId = A.csId
+                            AND cpId = A.cpId
+                            AND modelId = A.modelId
+                            AND connectorId = A.connectorId
+                            ORDER BY transactionId DESC
+                        LIMIT 1), 0) AS soc
+                , (SELECT name FROM TINF_CP WHERE id=cp.cpId) cpId
+                , FN_GET_UNIT_PRICE_INFO(cp.csId, cp.cpId, cp.modelId, '3', DATE_FORMAT(NOW(),'%Y%m%d')) unitPrice
+        FROM TINF_CS_CP cp
+        INNER JOIN TINF_CP_CONNECTOR conn ON  cp.cpId = conn.cpId
+        LEFT OUTER JOIN TINF_CP_CONNECTOR_STATUS A ON (conn.cpId = A.cpId AND conn.modelId = A.modelId AND conn.connectorId = A.connectorId)
+        LEFT OUTER JOIN TINF_CONNECTOR_TYPE C ON (conn.typeId = C.id)
+        LEFT OUTER JOIN TINF_CP_STATUS D ON (A.csId = D.csId AND A.cpId = D.cpId AND A.modelId = D.modelId)
+        <if test="csId != null">
+            WHERE cp.csId = #{csId}
+        </if>
+        ORDER BY cp.cpId, conn.connectorId
+        LIMIT #{startRow}, #{pageCount}
+    </select>
+
+    <select id="cpConnectorStatusCount" resultType="int">
+        /* com.bluenetworks.webapp.app.find.mapper.AppFindMapper.cpConnectorStatusCount */
+        SELECT 	count(*)
+        FROM TINF_CS_CP cp
+        INNER JOIN TINF_CP_CONNECTOR conn ON  cp.cpId = conn.cpId
+        LEFT OUTER JOIN TINF_CP_CONNECTOR_STATUS A ON (conn.cpId = A.cpId AND conn.modelId = A.modelId AND conn.connectorId = A.connectorId)
+        LEFT OUTER JOIN TINF_CONNECTOR_TYPE C ON (conn.typeId = C.id)
+        LEFT OUTER JOIN TINF_CP_STATUS D ON (A.csId = D.csId AND A.cpId = D.cpId AND A.modelId = D.modelId)
+        <if test="csId != null">
+            WHERE cp.csId = #{csId}
+        </if>
+    </select>
+
+    <select id="selectHistList" resultType="ResultMap">
+        /* com.bluenetworks.webapp.app.find.mapper.AppFindMapper.selectHistList */
+        WITH H_LIST AS (
+            SELECT
+                ( SELECT name FROM TINF_CP A WHERE A.id = H.cpId ) as cpName
+                , date_format( begin  , '%Y-%m-%d %H:%i:%s' ) AS begin
+                , date_format( end , '%Y-%m-%d %H:%i:%s' ) AS end
+			    , connectorId
+			    , ( SELECT customerName FROM TCSP_CUSTOMER B WHERE id = #{customerId} ) as customerName
+            FROM TCSP_CHARGE_HIST H WHERE csId = #{csId}
+        )
+        SELECT * FROM H_LIST
+        group by cpName , begin , end , connectorId , customerName
+        ORDER BY end DESC , connectorId ASC
+		LIMIT 5
+    </select>
+
+    <select id="selectCsId" resultType="int">
+        /* com.bluenetworks.webapp.app.find.mapper.AppFindMapper.selectCsId */
+        SELECT id FROM TINF_CS WHERE csId = #{csId}
+    </select>
+
+    <select id="selectChargingStatus" resultType="ResultMap">
+        /* com.bluenetworks.webapp.app.find.mapper.AppFindMapper.selectChargingStatus */
+        SELECT
+                COUNT(CASE WHEN (CPSTATUS.connectionYN = 'Y' AND CPCONNSTA.availibility = 2 AND CPCONNSTA.operating IN (1)) THEN 1 END) AS available
+             , COUNT(CASE WHEN (CPSTATUS.connectionYN = 'Y' AND CPCONNSTA.availibility = 2 AND CPCONNSTA.operating IN (7)) THEN 1 END) AS chargingReserve
+             , COUNT(CASE WHEN (CPSTATUS.connectionYN = 'Y' AND CPCONNSTA.availibility = 2 AND CPCONNSTA.operating IN (2, 3)) THEN 1 END) AS charging
+             , COUNT(*) AS cpAll
+             , (COUNT(*) - COUNT(CASE WHEN (CPSTATUS.connectionYN = 'Y' AND CPCONNSTA.availibility = 2 AND CPCONNSTA.operating IN (1)) THEN 1 END)
+                - COUNT(CASE WHEN (CPSTATUS.connectionYN = 'Y' AND CPCONNSTA.availibility = 2 AND CPCONNSTA.operating IN (7)) THEN 1 END)
+                - COUNT(CASE WHEN (CPSTATUS.connectionYN = 'Y' AND CPCONNSTA.availibility = 2 AND CPCONNSTA.operating IN (2, 3)) THEN 1 END)) AS unAvailable
+
+        FROM	TINF_CP_CONNECTOR CONN
+        INNER JOIN TINF_CONNECTOR_TYPE CONNTYPE
+            ON	CONN.typeId = CONNTYPE.id
+        LEFT OUTER JOIN TINF_CP_CONNECTOR_STATUS CPCONNSTA
+            ON	CPCONNSTA.cpId = CONN.cpId
+            AND	CPCONNSTA.connectorId = CONN.connectorId
+            AND	CPCONNSTA.modelId = CONN.modelId
+        LEFT OUTER JOIN TINF_CP_STATUS CPSTATUS
+            ON	CPSTATUS.cpId = CONN.cpId
+            AND	CPSTATUS.modelId = CONN.modelId
+        INNER JOIN TINF_CS_CP CSCP
+            ON	CONN.cpId = CSCP.cpId
+            AND	CONN.modelId = CSCP.modelId
+        INNER JOIN VINF_CP_INFO A
+            ON	CSCP.csId = A.csId
+            AND	CSCP.cpId = A.cpId
+            AND	CSCP.modelId = A.modelId
+        WHERE A.csId = #{csId}
+    </select>
+
+    <select id="selectCustomerData" resultType="ResultMap">
+        SELECT
+               C.notiYn2
+             , C.notiYn3
+             , C.notiYn4
+             , E.carNo
+        FROM TCSP_CUSTOMER C
+        INNER JOIN TCSP_CUSTOMER_EV E
+            ON C.id = E.customerId
+        WHERE C.userId = #{userId}
+    </select>
+
+    <update id="updateNotiYn">
+        update TCSP_CUSTOMER
+        set
+            notiYn2 = IFNULL(#{alramYn2},'N')
+          , notiYn3 = IFNULL(#{alramYn3},'N')
+          , notiYn4 = IFNULL(#{alramYn4},'N')
+        WHERE userId = #{userId}
+    </update>
+
+    <select id="selectStationLocation" resultType="ResultMap">
+        SELECT
+              csId
+            , longitude
+            , latitude
+        FROM TINF_CS
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectArea" resultType="ResultMap">
+        select * from TCO_AREA group by areaCd ORDER BY areaNm
+    </select>
+</mapper>

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?> <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" > 
+
+<mapper namespace="com.bluenetworks.webapp.app.charge.mapper.AppChargeMapper">
+
+    <select id="selectFavoritesList" parameterType="java.lang.String" resultType="org.json.simple.JSONObject">
+        SELECT A.id, A.csId, A.name, A.longitude, A.latitude
+         	, A.serviceCompanyId, A.openStartTime, A.openEndTime, A.parkingFeeYn, A.parkingFee
+         	, A.logoFilePath, E.id AS favId
+	        , B.name AS serviceCompanyName 
+	        , FN_GET_CODE_NM('1','CPMODEL003','01','ko') AS cpType1
+	        , C.cpCount1
+	        , (SELECT price FROM TCSP_CHARGE_PRICE WHERE useYN = 'Y' AND applyDate <![CDATA[<=]]> NOW() AND chargeModelPriceType='01' AND companyId = A.serviceCompanyId ORDER BY applyDate DESC LIMIT 1) AS cpPrice1
+	        , FN_GET_CODE_NM('1','CPMODEL003','02','ko') AS cpType2
+	      	, C.cpCount2
+	        , (SELECT price FROM TCSP_CHARGE_PRICE WHERE useYN = 'Y' AND applyDate <![CDATA[<=]]> NOW() AND chargeModelPriceType='02' AND companyId = A.serviceCompanyId ORDER BY applyDate DESC LIMIT 1) AS cpPrice2
+	        , FN_GET_CODE_NM('1','CPMODEL003','03','ko') AS cpType3
+	     	, C.cpCount3
+	        , (SELECT price FROM TCSP_CHARGE_PRICE WHERE useYN = 'Y' AND applyDate <![CDATA[<=]]> NOW() AND chargeModelPriceType='03' AND companyId = A.serviceCompanyId ORDER BY applyDate DESC LIMIT 1) AS cpPrice3
+	        , FN_GET_CODE_NM('1','CPMODEL003','04','ko') AS cpType4
+	      	, C.cpCount4
+	        , (SELECT price FROM TCSP_CHARGE_PRICE WHERE useYN = 'Y' AND applyDate <![CDATA[<=]]> NOW() AND chargeModelPriceType='04' AND companyId = A.serviceCompanyId ORDER BY applyDate DESC LIMIT 1) AS cpPrice4
+	        , FN_GET_CODE_NM('1','CPMODEL003','05','ko') AS cpType5
+	      	, C.cpCount5
+	        , (SELECT price FROM TCSP_CHARGE_PRICE WHERE useYN = 'Y' AND applyDate <![CDATA[<=]]> NOW() AND chargeModelPriceType='05' AND companyId = A.serviceCompanyId ORDER BY applyDate DESC LIMIT 1) AS cpPrice5
+	        , FN_GET_CODE_NM('1','CPMODEL003','06','ko') AS cpType6
+	      	, C.cpCount6
+	        , (SELECT price FROM TCSP_CHARGE_PRICE WHERE useYN = 'Y' AND applyDate <![CDATA[<=]]> NOW() AND chargeModelPriceType='06' AND companyId = A.serviceCompanyId ORDER BY applyDate DESC LIMIT 1) AS cpPrice6
+	        , CONCAT(A.address," ",A.addressDetail) AS fullAddr
+	        , FN_GET_CS_STATUS(A.id) AS csStatus        
+	        FROM TINF_CS A
+	        INNER JOIN TCSP_SERVICE_COMPANY B ON (A.serviceCompanyId = B.id)
+			INNER JOIN TCSP_FAVORITES E ON (A.id = E.csId)
+			INNER JOIN TCSP_CUSTOMER F ON (E.customerId = F.id)
+	        LEFT OUTER JOIN (SELECT cscp.csId
+	        				, COUNT(CASE WHEN model.cpType = '01' THEN 1 END) AS cpCount1
+	              			, COUNT(CASE WHEN model.cpType = '02' THEN 1 END) AS cpCount2
+	               			, COUNT(CASE WHEN model.cpType = '03' THEN 1 END) AS cpCount3
+	               			, COUNT(CASE WHEN model.cpType = '04' THEN 1 END) AS cpCount4
+	               			, COUNT(CASE WHEN model.cpType = '05' THEN 1 END) AS cpCount5
+	              			, COUNT(CASE WHEN model.cpType = '06' THEN 1 END) AS cpCount6
+	         				FROM TINF_CS_CP cscp
+	         				LEFT OUTER JOIN TINF_CPMODEL model
+	         				ON cscp.modelId = model.id
+	         				GROUP BY cscp.csId) C
+	        ON (A.id = C.csId)
+	        WHERE E.customerId = #{userId}
+    </select>
+
+	<delete id="deleteFavoritesOne" parameterType="org.json.simple.JSONObject">
+    	DELETE FROM TCSP_FAVORITES 
+    	WHERE id = #{favId}
+    	AND 	customerId = #{userId}
+    </delete>
+    
+</mapper>

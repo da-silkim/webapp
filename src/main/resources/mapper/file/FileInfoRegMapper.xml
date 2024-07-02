@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?> <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.bluenetworks.webapp.app.file.FileInfoRegMapper">
+    <!-- ****************************************************************************
+     * 파일업로드 엑셀 업로드
+     ****************************************************************************-->
+    <select id="selectAtchFileId" resultType="String">
+		SELECT  NVL(MAX(CAST(atchFileId AS INT)) + 1, 1) 
+		FROM 	TCO_ATT_FILE
+	</select>
+    <select id="selectAtchFileList" parameterType="map" resultType="ResultMap">
+        SELECT  atchFileId
+        ,  atchFileCd
+        ,  filePath
+        ,  fileName
+        ,  if(chFileNm is not null, chFileNm, fileName) as chFileNm
+        FROM  TCO_ATT_FILE
+        WHERE  delYn = 'N'
+        <if test="atchfileId != null and atchfileId != ''">
+            AND  atchFileId = #{atchfileId}
+        </if>
+    </select>
+
+    <select id="selectAtchFileOne" parameterType="map" resultType="ResultMap">
+        SELECT  atchFileId
+        ,  atchFileCd
+        ,  filePath
+        ,  fileName
+        ,  if(chFileNm is not null, chFileNm, fileName) as chFileNm
+        FROM  TCO_ATT_FILE
+        WHERE  delYn = 'N'
+        <if test="atchFileId != null and atchFileId != ''">
+            AND  atchFileId = #{atchFileId}
+        </if>
+    </select>
+
+    <insert id="insertFileUpload" parameterType="map" >
+        INSERT INTO TCO_ATT_FILE (
+             atchFileId
+             , atchFileCd
+             , filePath
+             , fileName
+             , chFileNm
+             , delYn
+             , regUserId
+             , regDt
+             , modUserId
+             , modDt
+        )
+        VALUES (
+           #{atchFileId}
+           , #{atchFileCd}
+           , #{filePath}
+           , #{fileNm}
+           , #{chFileNm}
+           , 'N'
+           , #{sessionUserId}
+           , NOW()
+           , #{sessionUserId}
+           , NOW()
+        )
+    </insert>
+
+    <delete id="deleteFileUpload" parameterType="map" >
+        DELETE
+        FROM  TCO_ATT_FILE
+        WHERE  atchFileId = #{atchFileId}
+    </delete>
+
+    <!-- ****************************************************************************
+     * 아래부터는 각 화면에서 업데이트 처리할것.
+     ****************************************************************************-->
+
+    <update id="deleteFileTifModel" parameterType="map" >
+        UPDATE  TIF_MODEL
+        SET  ${columId} = ''
+          ,  MOD_USER_ID = #{sessionUserId}
+          ,  MOD_DT = NOW()
+        WHERE  MODEL_ID = #{keyId}
+    </update>
+
+    <update id="deleteFileTifProject" parameterType="map" >
+        UPDATE  TIF_PROJECT
+        SET  ${columId} = ''
+          ,  MOD_USER_ID = #{sessionUserId}
+          ,  MOD_DT = NOW()
+        WHERE  PROJ_ID = #{keyId}
+    </update>
+
+    <update id="deleteFileTifVoc" parameterType="map" >
+        UPDATE  TCS_VOC
+        SET  ${columId} = ''
+          ,  MOD_USER_ID = #{sessionUserId}
+          ,  MOD_DT = NOW()
+        WHERE  VOC_ID = #{keyId}
+    </update>
+
+    <update id="deleteFileTinfModel" parameterType="map" >
+        UPDATE  TINF_CPMODEL
+        SET  ${columId} = ''
+          ,  modUserId = #{sessionUserId}
+          ,  modDt = NOW()
+        WHERE  id = #{keyId}
+    </update>
+
+    <update id="deleteFileTcspCustomer" parameterType="map" >
+        UPDATE  TCSP_CUSTOMER
+        SET  ${columId} = ''
+        WHERE  id = #{keyId}
+    </update>
+
+    <update id="deleteFileTinfCs" parameterType="map" >
+        UPDATE  TINF_CS
+        SET  ${columId} = ''
+        WHERE  id = #{keyId}
+    </update>
+</mapper>

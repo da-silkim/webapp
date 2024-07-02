@@ -1,0 +1,421 @@
+<?xml version="1.0" encoding="UTF-8"?> <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper">
+    <select id="selectCustomerId" resultType="String">
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.selectCustomerId */
+        SELECT
+            id
+        FROM TCSP_CUSTOMER
+        WHERE userId = #{userId}
+    </select>
+
+    <select id="selectDetail" resultType="java.util.HashMap">
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.selectDetail */
+        SELECT
+            A.id, A.companyId, FN_AES_DECRYPT(A.customerName) as customerName, A.customerType, A.userId
+             , A.zipcode, A.address, A.addressDetail, FN_AES_DECRYPT(A.mobile) as mobile
+             , FN_AES_DECRYPT(A.brithDay) as brithDay, A.point, FN_AES_DECRYPT(A.email) as email
+             , A.notiYn1, A.notiYn2, A.notiYn3, A.notiYn4, A.notiYn5, A.notiYn6, A.notiYn7, A.autoLogin
+             , E.carNo, E.evIdNumber
+             , D.promotionId, D.promotionNm, D.remark
+             , IFNULL(sum(P.dispayFee), 0) as totDispayFee
+        FROM TCSP_CUSTOMER A
+                 LEFT OUTER JOIN TCSP_AUTH B
+                                 ON B.customerId = A.id
+                 LEFT OUTER JOIN TCSP_PROMOTION D
+                                 ON D.promotionId = A.promotionId
+                 LEFT OUTER JOIN TCSP_CUSTOMER_EV E
+                                 ON E.customerId = A.id
+                 LEFT OUTER JOIN (SELECT dispayFee, batchCnt, userId
+                                  FROM TINF_PG_DISPAYMENT
+                                  WHERE userId = #{id}
+                                    AND batchCnt= 0
+        ) P
+                                 ON A.id = P.userId
+        WHERE 1=1
+          AND A.id = #{id}
+    </select>
+
+    <select id="selectCustomerDetail" resultType="java.util.HashMap">
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.selectCustomerDetail */
+        SELECT
+            A.id, FN_AES_DECRYPT(A.customerName) as customerName, A.customerType
+             , A.zipcode, A.address, A.addressDetail, FN_AES_DECRYPT(A.mobile) as mobile
+             , FN_AES_DECRYPT(A.brithDay) as brithDay, A.point, FN_AES_DECRYPT(A.email) as email
+             , E.carNo, E.evIdNumber
+        FROM TCSP_CUSTOMER A
+                 LEFT OUTER JOIN TCSP_CUSTOMER_EV E
+                                 ON E.customerId = A.id
+        WHERE 1=1
+          AND userId = #{userId}
+    </select>
+
+    <update id="passwordUpdate" >
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.passwordUpdate */
+        update TCSP_CUSTOMER
+        set
+            password = #{changePassword}
+        where 1=1
+          and id = #{id}
+    </update>
+
+    <update id="update" >
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.update */
+        UPDATE TCSP_CUSTOMER
+        SET customerName = FN_AES_ENCRYPT(#{customerName})
+          , mobile = FN_AES_ENCRYPT(replace(#{mobile} , '-' , '' ))
+          , brithDay = FN_AES_ENCRYPT(replace(#{brithDay} , '-' , '' ))
+          , email = FN_AES_ENCRYPT(#{email})
+          , zipcode = #{zipcode}
+          , address = #{address}
+          , addressDetail = #{addressDetail}
+        WHERE 1=1
+          AND id = #{id}
+    </update>
+
+    <update id="updateCar" >
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.updateCar */
+        update TCSP_CUSTOMER_EV
+        set carNo = #{carNo}
+          , evccId = #{evccId}
+          , evIdNumber = #{evIdNumber}
+        WHERE 1=1
+          AND customerId = #{id}
+    </update>
+
+    <select id="evCheck" resultType="int">
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.evCheck */
+        select count(*) from TCSP_CUSTOMER_EV
+        where 1=1
+          and customerId = #{id}
+    </select>
+
+    <insert id="insertCustomerEv" parameterType="map">
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.insertCustomerEv */
+        INSERT INTO TCSP_CUSTOMER_EV (
+                   customerId
+                 , carNo
+                 , evccId
+                 , carAlias
+                 , evIdNumber
+                 , regDt
+                 , regId
+        )
+        VALUES (
+                 #{id}
+               , #{carNo}
+               , #{evccId}
+               , #{carAlias}
+               , #{evIdNumber}
+               , now()
+               , #{id}
+               )
+    </insert>
+
+    <update id="updateCustomerStatus">
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.updateCustomerStatus */
+        UPDATE TCSP_CUSTOMER
+        SET status = 'E'
+        <where>
+            id = #{id}
+        </where>
+    </update>
+
+    <update id="updateAuthUnuse">
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.updateAuthUnuse */
+        UPDATE TCSP_AUTH
+        SET
+        useYn = 'N'
+        , customerId = NULL
+        , customerName = NULL
+        <where>
+            customerId = #{id}
+        </where>
+    </update>
+
+    <delete id="deleteCustomerCard">
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.deleteCustomerCard */
+        DELETE FROM TCSP_CUSTOMER_CARD
+        <where>
+            customerId = #{id}
+        </where>
+    </delete>
+
+    <delete id="deleteCustomerEv">
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.deleteCustomerEv */
+        DELETE FROM TCSP_CUSTOMER_EV
+        <where>
+            customerId = #{id}
+        </where>
+    </delete>
+
+    <sql id="listCommonCondition">
+        <if test="searchWord != null">
+            <if test="sysSelect == 'subject'">
+                AND A.subject LIKE CONCAT('%',#{searchWord},'%')
+            </if>
+            <if test="sysSelect == 'content'">
+                AND A.content LIKE CONCAT('%',#{searchWord},'%')
+            </if>
+            <if test="sysSelect == 'all' ">
+                AND (A.subject LIKE CONCAT('%',#{searchWord},'%')
+                OR A.content LIKE CONCAT('%',#{searchWord},'%'))
+            </if>
+        </if>
+    </sql>
+
+    <select id="noticeList" resultType="java.util.HashMap">
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.noticeList */
+        SELECT DATE_FORMAT(A.regDate, '%Y-%m-%d') AS fmtRegDate
+		        , A.id
+		        , A.subject
+		        , A.content
+		        , A.atchFileId
+		        , A.views
+		        , A.regId
+		        , A.regDate
+		        , A.updateDate
+		        , A.delYn
+		        , A.eventPop
+		        , A.startEventDate
+		        , A.endEventDate
+		        , A.fixYn
+        FROM	TSYS_NOTI_MGMT A
+        where 	A.delYn = 'N'
+        AND 	A.typeCode = 'M'
+        <include refid="com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.listCommonCondition" />
+        ORDER BY FIELD(A.fixYn, 'Y', 'N'), typeCode, A.fixOrder is null, A.fixOrder, A.regDate DESC
+    </select>
+
+    <select id="noticeDetail" resultType="map">
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.noticeDetail */
+        SELECT
+            A.*
+             ,DATE_FORMAT(regDate, '%Y-%m-%d') AS fmtRegDate
+        FROM TSYS_NOTI_MGMT A
+        WHERE A.id = #{boardId}
+    </select>
+
+    <update id="noticeViewsUpdate">
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.noticeViewsUpdate */
+        update TSYS_NOTI_MGMT set views = views+1
+        where id = #{boardId}
+    </update>
+
+    <select id="faqList" resultType="java.util.HashMap">
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.faqList */
+        SELECT
+            id
+             , subject
+             , content
+        FROM TSYS_NOTI_MGMT
+        WHERE typeCode = 'F'
+          AND delYn = 'N'
+        ORDER BY regDate
+    </select>
+
+    <select id="selectQnaList" resultType="java.util.HashMap">
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.selectQnaList */
+        SELECT vocId
+               , csId
+               , cpId
+               , custId
+               , vocGubun
+               , vocStatusCd
+               , FN_GET_CODE_NM(1, 'CO00031', vocStatusCd, '') AS VOC_STATUS_NM
+               , (SELECT groupCdNm FROM TCO_GROUP_CODE WHERE groupCd = vocKindCd) AS RECEPT_UPPER_NM
+               , FN_GET_CODE_NM(1, 'CO00030', vocKindDetailCd, '') AS RECEPT_SUB_NM
+               , vocKindCd
+               , vocKindDetailCd
+               , vocTitle
+               , vocContents AS VOC_RECEPT_MEMO
+               , vocActnContents AS VOC_FAULT_MEMO
+               , vocCmpltDt
+               , imageId1
+               , imageId2
+               , imageId3
+               , imageId4
+               , connectorId
+               , delYn
+               , checkYn
+               , reguserId
+               , DATE_FORMAT(regDt, '%Y-%m-%d') AS REG_DT
+               , modUserId
+               , DATE_FORMAT(modDt, '%Y-%m-%d') AS MOD_DT
+        FROM TCSP_VOC
+        WHERE regUserId = #{customerId}
+          AND delYn = 'N'
+          AND vocGubun = 'A'
+        ORDER BY regDt DESC, vocId DESC
+            LIMIT #{startRow}, #{pageCount}
+    </select>
+
+    <select id="selectQnaCount" resultType="int">
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.selectQnaList */
+        SELECT count(*)
+        FROM TCSP_VOC
+        WHERE regUserId = #{customerId}
+          AND delYn = 'N'
+          AND vocGubun = 'A'
+        ORDER BY regDt DESC, vocId DESC
+    </select>
+
+    <select id="selectQnaType" resultType="java.util.HashMap">
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.selectQnaType */
+        SELECT * FROM TCO_CODE WHERE groupCd = #{groupCd} AND useYn = 'Y' order by CAST(cd AS INT)
+    </select>
+
+    <insert id="insertQna" parameterType="java.util.HashMap">
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.insertQna */
+        INSERT INTO TCSP_VOC (
+             vocId
+           , vocGubun
+           , custId
+           , vocStatusCd
+           , vocKindCd
+           , vocKindDetailCd
+           , vocContents
+           , delYn
+           , regUserId
+           , regDt
+        )
+        VALUES (
+             #{vocId}
+           , 'A'
+           , #{id}
+           , '2'
+           , #{receptUpperCd1}
+           , #{receptSubCd1}
+           , #{vocContents}
+           , 'N'
+           , #{id}
+           , now()
+       )
+    </insert>
+
+    <select id="selectVocIdMax" resultType="String">
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.selectVocIdMax */
+        SELECT NVL(MAX(CAST(vocId AS INT)) +1, 1) FROM TCSP_VOC
+    </select>
+
+    <select id="selectPopDetail" resultType="java.util.HashMap">
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.selectPopDetail */
+        SELECT vocId
+             , csId
+             , cpId
+             , custId
+             , vocGubun
+             , vocStatusCd
+             , FN_GET_CODE_NM(1, 'CO00031', vocStatusCd, '') AS VOC_STATUS_NM
+             , (SELECT groupCdNm FROM TCO_GROUP_CODE WHERE groupCd = vocKindCd) AS RECEPT_UPPER_NM
+             , FN_GET_CODE_NM(1, 'CO00030', vocKindDetailCd, '') AS RECEPT_SUB_NM
+             , vocKindCd
+             , vocKindDetailCd
+             , vocTitle
+             , vocContents AS VOC_RECEPT_MEMO
+             , vocActnContents AS VOC_FAULT_MEMO
+             , vocCmpltDt
+             , imageId1
+             , imageId2
+             , imageId3
+             , imageId4
+             , connectorId
+             , delYn
+             , checkYn
+             , reguserId
+             , DATE_FORMAT(regDt, '%Y-%m-%d') AS REG_DT
+             , modUserId
+             , DATE_FORMAT(modDt, '%Y-%m-%d') AS MOD_DT
+        FROM TCSP_VOC
+        WHERE vocId = #{vocId} AND vocGubun = 'A' AND delYn = 'N'
+    </select>
+
+    <update id="updateQnaPop">
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.updateQnaPop */
+        UPDATE TCSP_VOC
+        SET
+            vocKindCd 		= #{receptUpperCd1}
+          , vocKindDetailCd		= #{receptSubCd1}
+          , vocContents 		= #{vocContents}
+          , modUserId 			= #{customerId}
+          , modDt 				= now()
+        WHERE vocId = #{vocId} AND vocGubun = 'A'
+    </update>
+
+    <update id="deleteQna">
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.deleteQna */
+        UPDATE TCSP_VOC
+        SET
+            delYn = 'Y'
+        WHERE vocId = #{vocId} AND vocGubun = 'A'
+    </update>
+
+    <select id="searchStationList" resultType="java.util.HashMap">
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.searchStationList */
+        SELECT
+            id,
+            name,
+            IFNULL(
+                6371 * 2 * ASIN(SQRT(
+                    POWER(SIN((latitude - #{latitude}) * PI() / 180 / 2), 2) +
+                    COS(latitude * PI() / 180) * COS(#{latitude} * PI() / 180) *
+                    POWER(SIN((longitude - #{longitude}) * PI() / 180 / 2), 2)
+            )), 9999999)  AS distance
+        FROM
+            TINF_CS
+        ORDER BY
+            distance, latitude IS NULL, longitude IS NULL
+    </select>
+
+    <select id="searchChargerList" resultType="java.util.HashMap">
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.searchChargerList */
+        select
+            C.id
+          , C.name
+        from TINF_CP C
+            inner join TINF_CS_CP SP
+            on C.id = SP.cpId
+        where SP.csId = #{csId}
+    </select>
+
+    <insert id="insertBrokenCharger" parameterType="java.util.HashMap">
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.insertBrokenCharger */
+        INSERT INTO TCSP_VOC (
+               vocId
+             , vocGubun
+             , custId
+             , vocStatusCd
+             , vocKindCd
+             , vocKindDetailCd
+             , vocTitle
+             , vocContents
+             , delYn
+             , regUserId
+             , regDt
+             , csId
+             , cpId
+             , imageId1
+        )
+        VALUES (
+             #{vocId}
+           , 'B'
+           , #{id}
+           , '1'
+           , '2'
+           , #{opinionType}
+           , #{subject}
+           , #{content}
+           , 'N'
+           , #{id}
+           , now()
+           , #{cs}
+           , #{cp}
+           , #{uploadId}
+       )
+    </insert>
+
+    <select id="selectPasswordCheck" resultType="int">
+        /* com.bluenetworks.webapp.app.customer.mapper.AppCustomerMapper.selectPasswordCheck */
+        SELECT count(*) FROM TCSP_CUSTOMER where password = #{password} and id = #{id}
+    </select>
+</mapper>

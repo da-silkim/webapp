@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?> <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" > 
+
+<mapper namespace="com.bluenetworks.webapp.app.promotion.mapper.AppPromotionMapper">
+    <select id="selectCustomerDetail" resultType="ResultMap">
+        /* com.bluenetworks.webapp.app.promotion.mapper.AppPromotionMapper.selectCustomerDetail */
+        SELECT companyId, id FROM TCSP_CUSTOMER WHERE userId = #{userId}
+    </select>
+
+    <select id="selectPromotionList" resultType="ResultMap">
+        /* com.bluenetworks.webapp.app.promotion.mapper.AppPromotionMapper.selectPromotionList */
+        SELECT
+               P.promotionId
+             , P.promotionNm
+             , P.applyStartDt
+             , P.applyEndDt
+             , P.memberStartDt
+             , P.memberEndDt
+             , P.benefitType
+             , P.dcRate
+             , P.creditRate
+             , P.creditAmt
+             , P.remark
+             , (SELECT count(*) FROM TCSP_PROMOTION_AUTH_CODE WHERE promotionId = P.promotionId and customerId = #{customerId}) as useYn
+        FROM TCSP_PROMOTION P
+        WHERE companyId = #{companyId}
+    </select>
+
+    <!-- 인증코드 체크 -->
+    <select id="authCdCheck" resultType="int">
+        /* com.bluenetworks.webapp.app.promotion.mapper.AppPromotionMapper.authCdCheck */
+        SELECT
+            count(*)
+        FROM TCSP_PROMOTION_AUTH_CODE
+        <where>
+            authCode = #{authCode}
+            AND companyId = #{companyId}
+            AND status = '0'
+            AND promotionId = #{promotionId}
+            <![CDATA[AND validStartDt <= NOW()]]>
+            <![CDATA[AND validEndDt >= NOW()]]>
+        </where>
+    </select>
+
+    <!-- 프로모션 등록 -->
+    <update id="insertCustomerPromotion" parameterType="map">
+        /* com.bluenetworks.webapp.app.promotion.mapper.AppPromotionMapper.insertCustomerPromotion */
+        UPDATE TCSP_PROMOTION_AUTH_CODE
+        SET customerId = #{customerId}
+          , status = '1'
+        WHERE authCode = #{authCode} AND promotionId = #{promotionId} AND companyId = #{companyId}
+    </update>
+
+    <update id="updateCustomerPromotion" parameterType="map">
+        /* com.bluenetworks.webapp.app.promotion.mapper.AppPromotionMapper.updateCustomerPromotion */
+        UPDATE TCSP_CUSTOMER
+        SET promotionId = #{promotionId}
+        WHERE id = #{customerId}
+    </update>
+</mapper>

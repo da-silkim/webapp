@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?> <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" > 
+
+<mapper namespace="com.bluenetworks.webapp.app.member.mapper.MemberMapper">
+
+    <insert id="INSERT_COM_CUSTOMER" parameterType="org.json.simple.JSONObject">
+        /* com.bluenetworks.webapp.app.member.mapper.MemberMapper.INSERT_COM_CUSTOMER */
+        INSERT INTO TCSP_CUSTOMER (
+        id, customerType, companyId, customerName, userId
+        , password, zipcode, address, addressDetail, mobile, brithDay
+        <if test="point != null and point != ''">
+            , point
+        </if>
+        <if test="evModelId != null and evModelId != ''">
+            , evModelId
+        </if>
+        , pointUseYn, agreeYn, agreeYn2
+        <if test="deposit != null and deposit != ''">
+            , deposit
+        </if>
+        <if test="bizNum != null and bizNum != ''">
+            , bizNum
+        </if>
+        , pricePlanId, joinDate, promotionId, email
+        <if test="tel != null and tel != ''">
+            , tel
+        </if>
+        <if test="bizCode != null and bizCode != ''">
+            , bizCode
+        </if>
+        , bizType, delvZipcode, delvAddress, delvAddressDetail, emailRecvYn
+        , smsRecvYn, atchFileId01, atchFileId02, memCardPubType, payMethod
+        , marketAgreeYn, skHomeServiceMemYn, status)
+        VALUES (
+        #{id}, #{customerType}, #{companyId}, FN_AES_ENCRYPT(#{customerName}), #{userId}
+        , #{password}, #{zipcode}, #{address}, #{addressDetail}, FN_AES_ENCRYPT(REPLACE(#{mobile},'-',''))
+        , FN_AES_ENCRYPT(REPLACE(#{brithDay},'-',''))
+        <if test="point != null and point != ''">
+            , #{point}
+        </if>
+        <if test="evModelId != null and evModelId != ''">
+            , #{evModelId}
+        </if>
+        , #{pointUseYn}, "Y", "Y"
+        <if test="deposit != null and deposit != ''">
+            , REPLACE(#{deposit},',','')
+        </if>
+        <if test="bizNum != null and bizNum != ''">
+            , REPLACE(#{bizNum},'-','')
+        </if>
+        , #{pricePlanId}, #{joinDate}, #{promotionId}, FN_AES_ENCRYPT(#{email})
+        <if test="tel != null and tel != ''">
+            , REPLACE(#{tel},'-','')
+        </if>
+        <if test="bizCode != null and bizCode != ''">
+            , #{bizCode}
+        </if>
+        , #{bizType}, #{delvZipcode}, #{delvAddress}, #{delvAddressDetail}, #{emailRecvYn}
+        , #{smsRecvYn}, #{atchFileId01}, #{atchFileId02}, #{memCardPubType}, #{payMethod}
+        , "Y", #{skHomeServiceMemYn}, #{status})
+    </insert>
+
+    <select id="SELECT_COM_CUSTOMER" parameterType="org.json.simple.JSONObject" resultType="org.json.simple.JSONObject">
+        /* com.bluenetworks.webapp.app.member.mapper.MemberMapper.SELECT_COM_CUSTOMER */
+        SELECT
+        id, customerType, companyId, FN_AES_DECRYPT(customerName) as customerName, userId
+        , password, zipcode, address, addressDetail, FN_AES_DECRYPT(mobile) as mobile
+        , FN_AES_DECRYPT(brithDay) as brithDay, point, notiYn1, notiYn2, notiYn3
+        , notiYn4, notiYn5, notiYn6, notiYn7, evModelId
+        , autoLogin, social, socialId, pointUseYn, agreeYn
+        , deposit, disPayment, agreeYn2, marketAgreeYn, bizNum
+        , memCardStat, pricePlanId, joinDate, promotionId, FN_AES_DECRYPT(email) as email
+        , tel, bizCode, bizType, taxBillYn, delvZipcode
+        , delvAddress, delvAddressDetail, emailRecvYn, smsRecvYn, atchFileId01
+        , atchFileId02, memshipCardNo, memCardPubType, skHomeServiceMemYn, payMethod
+        , status
+        FROM TCSP_CUSTOMER
+        WHERE 1=1
+        <if test="userid != null and userid != ''">
+            AND USERID = #{userid}
+        </if>
+        <choose>
+        	<when test="status != null and status == 'normal'">
+        		AND STATUS IN ('A', 'P')
+        	</when>
+        	<when test="status != null and status != 'normal'">
+        		AND STATUS = #{status}
+        	</when>
+        </choose>
+        <if test="phoneno != null">
+            AND MOBILE = #{phoneno}
+        </if>
+        LIMIT 1
+    </select>
+
+    <select id="userCheck" resultType="int">
+        /* com.bluenetworks.webapp.app.member.mapper.MemberMapper.userCheck */
+        SELECT
+            count(*) cnt
+        FROM TCSP_CUSTOMER
+        WHERE 1=1
+          AND userId = #{userId}
+          AND password = #{password}
+          AND companyId = #{companyId}
+    </select>
+
+    <!-- 인증 정보 등록 -->
+    <insert id="insertCustomerAuth" parameterType="org.json.simple.JSONObject" >
+        /* com.bluenetworks.webapp.app.member.mapper.MemberMapper.insertCustomerAuth */
+        INSERT
+        INTO TCSP_AUTH (
+        companyId, idToken, useYn, parrentIdToken, regDate
+        , status, wholeChargedEnergy, wholeChargedPrice
+        <if test="freeLimitTotal != null and freeLimitTotal != ''">
+            , remainingFreeEnergy
+        </if>
+        <if test="limitTotal != null and limitTotal != ''">
+            , remainingAvailableChargingEnergy
+        </if>
+        , customerName, customerId, tokenGroup)
+        VALUES (
+        #{companyId}, #{idToken}, 'Y', '1001', now()
+        , #{status}, 0, 0
+        <if test="freeLimitTotal != null and freeLimitTotal != ''">
+            , #{freeLimitTotal}
+        </if>
+        <if test="limitTotal != null and limitTotal != ''">
+            , #{limitTotal}
+        </if>
+        , FN_AES_ENCRYPT(#{customerName}), #{id}, '1001')
+    </insert>
+
+    <insert id="insertCustomerEv" parameterType="map">
+        /* com.bluenetworks.webapp.app.member.mapper.MemberMapper.insertCustomerEv */
+        INSERT INTO TCSP_CUSTOMER_EV (
+               customerId
+             , carNo
+             , evccId
+             , carAlias
+             , evIdNumber
+             , regDt
+             , regId
+        )
+        VALUES (
+             #{id}
+           , #{carNo}
+           , #{evccId}
+           , #{carAlias}
+           , #{evIdNumber}
+           , now()
+           , #{id}
+       )
+    </insert>
+
+    <select id="userAuthCheck" parameterType="string" resultType="int">
+        /* com.bluenetworks.webapp.app.member.mapper.MemberMapper.userAuthCheck */
+        SELECT
+            count(*)
+        FROM TCSP_AUTH
+        WHERE idToken = #{idToken}
+    </select>
+
+    <select id="selectIdMax" resultType="String">
+        /* com.bluenetworks.webapp.app.member.mapper.MemberMapper.selectIdMax */
+        SELECT  LPAD(NVL(MAX( CAST(TRIM(LEADING 0 FROM (SUBSTR(id, 4))) AS UNSIGNED) )+1, 1), 7, '0') AS ID
+        FROM  TCSP_CUSTOMER
+    </select>
+
+    <insert id="insertCustomerHist" parameterType="org.json.simple.JSONObject">
+        /* com.bluenetworks.webapp.app.member.mapper.MemberMapper.insertCustomerHist */
+        INSERT INTO TCSP_CUSTOMER_HIST (
+             id, userId, histTypeCd, bfrData, aftData, media, regId, regDate
+        ) VALUES (
+             #{id}, #{userId}, #{histTypeCd}, #{bfrData}, #{aftData}, #{media}, #{regId}, now()
+               )
+    </insert>
+    
+    <select id="idCheck" resultType="int">
+        /* com.bluenetworks.webapp.app.member.mapper.MemberMapper.idCheck */
+        SELECT count(*)
+        FROM TCSP_CUSTOMER
+        WHERE customerName = FN_AES_ENCRYPT(#{customerName})
+        AND replace(brithDay,'-','') = FN_AES_ENCRYPT(#{brithDay})
+        AND mobile = FN_AES_ENCRYPT(#{mobile})
+        <if test=" flag != null and flag.equals('pw') ">
+            AND userId = #{userId}
+        </if>
+    </select>
+
+    <select id="getIdAndPw" resultType="java.util.HashMap">
+        /* com.bluenetworks.webapp.app.member.mapper.MemberMapper.getIdAndPw */
+        SELECT userId, email
+        FROM TCSP_CUSTOMER
+        WHERE customerName = FN_AES_ENCRYPT(#{customerName})
+          AND replace(brithDay,'-','') = FN_AES_ENCRYPT(#{brithDay})
+          AND mobile = FN_AES_ENCRYPT(#{mobile})
+            LIMIT 1
+    </select>
+
+    <update id="passwordUpdate">
+        /* com.bluenetworks.webapp.app.member.mapper.MemberMapper.passwordUpdate */
+        update TCSP_CUSTOMER
+        set
+            password = #{password}
+        where 1=1
+          and userId = #{userId}
+    </update>
+
+    <select id="selectCarNumberCheck" resultType="int">
+        /* com.bluenetworks.webapp.app.member.mapper.MemberMapper.selectCarNumberCheck */
+        SELECT count(*) FROM TCSP_CUSTOMER_EV where carNo = #{carNo}
+    </select>
+</mapper>
