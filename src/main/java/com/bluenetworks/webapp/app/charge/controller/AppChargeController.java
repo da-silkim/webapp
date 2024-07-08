@@ -1,12 +1,11 @@
 package com.bluenetworks.webapp.app.charge.controller;
 
-import com.bluenetworks.webapp.app.charge.dto.type.MessageTrigger;
-import com.bluenetworks.webapp.app.charge.service.AppChargeService;
-import com.bluenetworks.webapp.app.customer.service.AppCustomerService;
-import com.bluenetworks.webapp.common.CommonUtil;
-import com.bluenetworks.webapp.common.NetUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.collections4.MapUtils;
 import org.json.simple.JSONObject;
@@ -22,12 +21,13 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import javax.servlet.http.HttpServletRequest;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.bluenetworks.webapp.app.charge.service.AppChargeService;
+import com.bluenetworks.webapp.app.customer.service.AppCustomerService;
+import com.bluenetworks.webapp.common.CommonUtil;
+import com.bluenetworks.webapp.common.NetUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import lombok.RequiredArgsConstructor;
 
 @Controller
 @RequiredArgsConstructor
@@ -70,7 +70,15 @@ public class AppChargeController {
         param.put("customerId", customerId);
         Map infoParam = appChargeService.selectChargingInfo(param);
 
+        
+        LOGGER.info("infoParam:"+infoParam.toString());
+
+
         if(infoParam != null) {
+            param.put("csPkId",infoParam.get("csId"));
+            param.put("cpPkId", infoParam.get("cpId"));
+            LOGGER.info("param:"+param.toString());
+
             Map<String, Object> resParam = appChargeService.chargerDetail(param);
             double price  = Double.parseDouble((String)resParam.get("unitPrice")) * Double.parseDouble((String)infoParam.get("chargePower"));
 
@@ -96,6 +104,7 @@ public class AppChargeController {
             model.addAttribute("chargeSpeedType", infoParam.get("chargeSpeedType"));
         } else {
             model.addAttribute("error", "notCharging");
+            LOGGER.info("infoParam is null");
         }
 
         return "app/charge/charge_now.app_tiles";

@@ -166,7 +166,7 @@
             </foreach>
             ,CONCAT(A.address," ",A.addressDetail) AS fullAddr
             ,(SELECT AA.id FROM TCSP_FAVORITES AA
-                WHERE AA.customerId = #{customerId} AND AA.csId = A.id) AS favState
+                WHERE AA.customerId = #{customerId} AND AA.csId = A.id LIMIT 1) AS favState
             , FN_GET_CS_STATUS(A.id) AS csStatus
             <if test="pricePolicy == 'B'.toString()">
                 , ( SELECT price FROM TCSP_CHARGE_PRICE
@@ -181,31 +181,31 @@
                     , ( SELECT unitprice1 FROM TCSP_CHARGE_PRICE_POLICY
                             WHERE companyId = A.serviceCompanyId
                             AND priceCode = A.priceCode
-                            AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS cpPrice
+                            AND hour = (SELECT HOUR(NOW()) AS currentHour) LIMIT 1) AS cpPrice
                     , ( SELECT noMemUnitprice1 FROM TCSP_CHARGE_PRICE_POLICY
                     WHERE companyId = A.serviceCompanyId
                     AND priceCode = A.priceCode
-                    AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS noMemUnitprice
+                    AND hour = (SELECT HOUR(NOW()) AS currentHour) LIMIT 1) AS noMemUnitprice
                 </if>
                 <if test="priceType == 2">
                     , ( SELECT unitprice2 FROM TCSP_CHARGE_PRICE_POLICY
                             WHERE companyId = A.serviceCompanyId
                             AND priceCode = A.priceCode
-                            AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS cpPrice
+                            AND hour = (SELECT HOUR(NOW()) AS currentHour) LIMIT 1) AS cpPrice
                     , ( SELECT noMemUnitprice2 FROM TCSP_CHARGE_PRICE_POLICY
                             WHERE companyId = A.serviceCompanyId
                             AND priceCode = A.priceCode
-                            AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS noMemUnitprice
+                            AND hour = (SELECT HOUR(NOW()) AS currentHour) LIMIT 1) AS noMemUnitprice
                 </if>
                 <if test="priceType == 3">
                     , ( SELECT unitprice3 FROM TCSP_CHARGE_PRICE_POLICY
                             WHERE companyId = A.serviceCompanyId
                             AND priceCode = A.priceCode
-                            AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS cpPrice
+                            AND hour = (SELECT HOUR(NOW()) AS currentHour) LIMIT 1) AS cpPrice
                     , ( SELECT noMemUnitprice3 FROM TCSP_CHARGE_PRICE_POLICY
                             WHERE companyId = A.serviceCompanyId
                             AND priceCode = A.priceCode
-                            AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS noMemUnitprice
+                            AND hour = (SELECT HOUR(NOW()) AS currentHour) LIMIT 1) AS noMemUnitprice
                 </if>
             </if>
         FROM TINF_CS A
@@ -289,7 +289,7 @@
             </foreach>
              ,CONCAT(A.address," ",A.addressDetail) AS fullAddr
              ,(SELECT AA.id FROM TCSP_FAVORITES AA
-               WHERE AA.customerId = #{customerId} AND AA.csId = A.id) AS favState
+               WHERE AA.customerId = #{customerId} AND AA.csId = A.id LIMIT 1) AS favState
              , FN_GET_CS_STATUS(A.id) AS csStatus
         <if test="pricePolicy == 'B'.toString()">
             , ( SELECT price FROM TCSP_CHARGE_PRICE
@@ -304,31 +304,31 @@
                 , ( SELECT unitprice1 FROM TCSP_CHARGE_PRICE_POLICY
                         WHERE companyId = A.serviceCompanyId
                         AND priceCode = A.priceCode
-                        AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS cpPrice
+                        AND hour = (SELECT HOUR(NOW()) AS currentHour) LIMIT 1) AS cpPrice
                 , ( SELECT noMemUnitprice1 FROM TCSP_CHARGE_PRICE_POLICY
                         WHERE companyId = A.serviceCompanyId
                         AND priceCode = A.priceCode
-                        AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS noMemUnitprice
+                        AND hour = (SELECT HOUR(NOW()) AS currentHour) LIMIT 1) AS noMemUnitprice
             </if>
             <if test="priceType == 2">
                 , ( SELECT unitprice2 FROM TCSP_CHARGE_PRICE_POLICY
                         WHERE companyId = A.serviceCompanyId
                         AND priceCode = A.priceCode
-                        AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS cpPrice
+                        AND hour = (SELECT HOUR(NOW()) AS currentHour) LIMIT 1) AS cpPrice
                 , ( SELECT noMemUnitprice2 FROM TCSP_CHARGE_PRICE_POLICY
                         WHERE companyId = A.serviceCompanyId
                         AND priceCode = A.priceCode
-                        AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS noMemUnitprice
+                        AND hour = (SELECT HOUR(NOW()) AS currentHour) LIMIT 1) AS noMemUnitprice
             </if>
             <if test="priceType == 3">
                 , ( SELECT unitprice3 FROM TCSP_CHARGE_PRICE_POLICY
                         WHERE companyId = A.serviceCompanyId
                         AND priceCode = A.priceCode
-                        AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS cpPrice
+                        AND hour = (SELECT HOUR(NOW()) AS currentHour) LIMIT 1) AS cpPrice
                 , ( SELECT noMemUnitprice3 FROM TCSP_CHARGE_PRICE_POLICY
                         WHERE companyId = A.serviceCompanyId
                         AND priceCode = A.priceCode
-                        AND hour = (SELECT HOUR(NOW()) AS currentHour)) AS noMemUnitprice
+                        AND hour = (SELECT HOUR(NOW()) AS currentHour) LIMIT 1) AS noMemUnitprice
             </if>
         </if>
         FROM TINF_CS A

@@ -89,7 +89,7 @@
                 ON CPP.priceCode = CS.priceCode
         WHERE CSCP.csId = #{csPkId}
         AND CSCP.cpId = #{cpPkId}
-        AND CPP.hour = (SELECT HOUR(NOW()) AS currentHour)
+        AND CPP.hour = (SELECT HOUR(NOW()) AS currentHour) limit 1
     </select>
     
     <select id="selectCharging" resultType="java.util.HashMap">
