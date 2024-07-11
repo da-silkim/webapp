@@ -203,16 +203,16 @@
 .detail_map .charSearch-wrap .searchOption-wrap > li { padding: 1.2rem 0; border-top: 0.1rem solid #e5e5e5; display: table; width: 100%; }
 .detail_map .charSearch-wrap .searchOption-wrap > li:nth-child(1) { border-top: none; }
 .detail_map .charSearch-wrap .searchOption-wrap > li:last-child { padding-bottom: 0; }
-.detail_map .charSearch-wrap .searchOption-wrap > li > p.subTit { display: table-cell; vertical-align: top; position: relative; padding-top: 1rem; width: 21%; }
+.detail_map .charSearch-wrap .searchOption-wrap > li > p.subTit { display: table-cell; vertical-align: middle; position: relative; width: 23%; }
 .detail_map .charSearch-wrap .searchOption-wrap > li > ul { width: 100%; display: block; }
 .detail_map .charSearch-wrap ul.option-wrap::after { content: ""; display: block; clear: both; }
 .detail_map .charSearch-wrap ul.option-wrap > li { float: left; width: 18%; height: 3.2rem; margin-left: 2%; font-size: 5px; }
 .detail_map .charSearch-wrap ul.option-wrap > li:nth-child(5n) { float: left; }
 .detail_map .charSearch-wrap ul.option-wrap > li:nth-child(1),
-.detail_map .charSearch-wrap ul.option-wrap > li:nth-child(2) { margin-bottom: 1rem; }
-.detail_map .charSearch-wrap ul.option-wrap > li:nth-child(3) { margin-bottom: 1rem; }
-.detail_map .charSearch-wrap ul.option-wrap > li:nth-child(4) { margin-bottom: 1rem; }
-.detail_map .charSearch-wrap ul.option-wrap > li:nth-child(5) { margin-bottom: 1rem; }
+.detail_map .charSearch-wrap ul.option-wrap > li:nth-child(2) { margin-top: 0.5rem; margin-bottom: 0.5rem; }
+.detail_map .charSearch-wrap ul.option-wrap > li:nth-child(3) { margin-top: 0.5rem; margin-bottom: 0.5rem; }
+.detail_map .charSearch-wrap ul.option-wrap > li:nth-child(4) { margin-top: 0.5rem; margin-bottom: 0.5rem; }
+.detail_map .charSearch-wrap ul.option-wrap > li:nth-child(5) { margin-top: 0.5rem; margin-bottom: 0.5rem; }
 .detail_map .charSearch-wrap ul.option-wrap > li > label { text-align: center; padding: 0; background: #e5e5e5; line-height: 3.2rem; color: #fff; width: 100%; height: 100%; border-radius: 3rem 3rem; }
 .detail_map .charSearch-wrap ul.option-wrap > li > label::before { display: none; }
 .detail_map .charSearch-wrap ul.option-wrap > li > input:checked + label { background: #0C419A; }
