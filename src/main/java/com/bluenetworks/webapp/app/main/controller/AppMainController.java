@@ -12,6 +12,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,51 +31,54 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping(value = "/app")
 public class AppMainController {
 
-	private final AppMainService appMainService; 
+	private final AppMainService appMainService;
 	private final AppChargeService appChargeService;
+	private final Logger LOGGER = LoggerFactory.getLogger(this.getClass().getName());
 
 	@RequestMapping(value = "/main")
-	public String index1(@RequestParam Map<String,String> params, HttpServletRequest request, Model model, HttpServletResponse response) throws Exception {
+	public String index1(@RequestParam Map<String, String> params, HttpServletRequest request, Model model,
+			HttpServletResponse response) throws Exception {
 
 		// 팝업
 		JSONObject param = new JSONObject();
 		param.put("popuptype", 1); // 앱
 
-		//본인인증모듈로 요청
+		// 본인인증모듈로 요청
 		String popup = request.getParameter("popup");
-		if(popup != null && !popup.equals("")){
+		if (popup != null && !popup.equals("")) {
 			model.addAttribute("popupUrl", popup);
 			model.addAttribute("popupData", params);
 		}
-		
+
 		String userId = (String) NetUtils.getSession(request, "userid");
 		String userName = (String) NetUtils.getSession(request, "username");
 		String customerId = (String) NetUtils.getSession(request, "customerId");
-		
-		System.out.println("userid :::::::: "+userId);
-		System.out.println("username :::::::: "+userName);
-		System.out.println("customerId :::::::: "+customerId);
+
+		System.out.println("userid :::::::: " + userId);
+		System.out.println("username :::::::: " + userName);
+		System.out.println("customerId :::::::: " + customerId);
 		model.addAttribute("userName", userName);
 
 		return "app/main/index.app_main_tiles";
 	}
-	
+
 	@RequestMapping(value = "/main/list")
-    @ResponseBody
-    public Map<String, Object> station_list(@RequestParam Map<String, Object> paramMap, HttpServletRequest request) throws Exception {
+	@ResponseBody
+	public Map<String, Object> station_list(@RequestParam Map<String, Object> paramMap, HttpServletRequest request)
+			throws Exception {
 
 		Map<String, Object> resultMap = new HashMap<String, Object>();
 
 		List<Map<String, Object>> noticList = appMainService.selectNoticeList(paramMap);
 		resultMap.put("notiList", noticList);
-		
+
 		String userId = (String) NetUtils.getSession(request, "userid");
 		String customerId = (String) NetUtils.getSession(request, "customerId");
-		
+
 		paramMap.put("customerId", customerId); // 앱
-		
+
 		List<Map<String, Object>> stationList = new ArrayList<Map<String, Object>>();
-		if(userId == null || "".equals(userId)) {
+		if (userId == null || "".equals(userId)) {
 			stationList = appMainService.selectPeriStationList(paramMap);
 			resultMap.put("paymentUrl", "");
 		} else {
@@ -93,28 +98,46 @@ public class AppMainController {
 
 		paramMap.put("yearMonth", formattedYearMonth);
 
-		List<Map<String, Object>> dashboard = new ArrayList<>();
-		dashboard = appMainService.selectMonthDashboard(paramMap);
-
 		double power = 0;
 		int totalPrice = 0;
 		int totCount = 0;
 
-		for(Map<String, Object> item : dashboard) {
-			power += Double.parseDouble((String) item.get("power"));
-			totalPrice += Integer.parseInt((String) item.get("totalPrice"));
-			totCount += Integer.parseInt((String) item.get("totCount"));
+		// null check(customerId, yearMonth)
+		if (customerId == null || customerId.isEmpty()) {
+			LOGGER.error("customerId is null : " + customerId);
+		} else if (formattedYearMonth == null || formattedYearMonth.isEmpty()) {
+			LOGGER.error("formattedYearMonth is null : " + formattedYearMonth);
+		} else {
+			List<Map<String, Object>> dashboard = new ArrayList<>();
+			dashboard = appMainService.selectMonthDashboard(paramMap);
+
+			for (Map<String, Object> item : dashboard) {
+				String tmp_power = (String) item.get("power");
+				if (!tmp_power.isEmpty() && tmp_power != null)
+					power += Double.parseDouble(tmp_power);
+
+				String tmp_totalPrice = (String) item.get("totalPrice");
+				if (!tmp_totalPrice.isEmpty() && tmp_totalPrice != null)
+					totalPrice += Integer.parseInt(tmp_totalPrice);
+
+				String tmp_totCount = (String) item.get("totCount");
+				if (!tmp_totCount.isEmpty() && tmp_totCount != null)
+					totCount += Integer.parseInt(tmp_totCount);
+
+				// power += Double.parseDouble((String) item.get("power"));
+				// totalPrice += Integer.parseInt((String) item.get("totalPrice"));
+				// totCount += Integer.parseInt((String) item.get("totCount"));
+			}
 		}
-			
+
 		resultMap.put("customerId", customerId);
 		resultMap.put("stationList", stationList);
 		resultMap.put("power", power);
 		resultMap.put("totalPrice", totalPrice);
 		resultMap.put("totCount", totCount);
 
-
-        return resultMap;
-    }
+		return resultMap;
+	}
 
 	@RequestMapping(value = "/main/charge_status")
 	@ResponseBody
