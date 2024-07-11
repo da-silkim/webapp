@@ -86,8 +86,10 @@
 				let number = res.power;
 				let power = number.toFixed(2); // 소수점 두 자리까지 반올림하여 문자열로 변환
 
+
 				$("#charging").text(power + " kWh");
 				$("#totalPrice").text($formatNumber(res.totalPrice) + " 원");
+				$("#totalCount").text(res.totCount + " 회");
 
 				let notiList = res.notiList;
 				let notiHtml = "";

@@ -44,7 +44,7 @@
 		/* com.bluenetworks.webapp.app.main.mapper.AppMainMapper.selectMonthDashboard */
 		SELECT
 			  IFNULL(ROUND(CHARGE.power/1000,2), 0) AS power
-			, CHARGE.totalPrice
+			, CHARGE.totalPrice, COUNT(*) as totCount
 		FROM TCSP_CHARGE_HIST CHARGE
 			INNER JOIN TCSP_AUTH AUTH
 			ON CHARGE.idTag = AUTH.idToken

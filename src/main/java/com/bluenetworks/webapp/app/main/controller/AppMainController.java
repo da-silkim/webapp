@@ -1,18 +1,5 @@
 package com.bluenetworks.webapp.app.main.controller;
 
-import com.bluenetworks.webapp.app.charge.service.AppChargeService;
-import com.bluenetworks.webapp.app.main.service.AppMainService;
-import com.bluenetworks.webapp.common.NetUtils;
-import lombok.RequiredArgsConstructor;
-import org.json.simple.JSONObject;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -20,6 +7,22 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.json.simple.JSONObject;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.bluenetworks.webapp.app.charge.service.AppChargeService;
+import com.bluenetworks.webapp.app.main.service.AppMainService;
+import com.bluenetworks.webapp.common.NetUtils;
+
+import lombok.RequiredArgsConstructor;
 
 @Controller
 @RequiredArgsConstructor
@@ -95,16 +98,19 @@ public class AppMainController {
 
 		double power = 0;
 		int totalPrice = 0;
+		int totCount = 0;
 
 		for(Map<String, Object> item : dashboard) {
 			power += Double.parseDouble((String) item.get("power"));
 			totalPrice += Integer.parseInt((String) item.get("totalPrice"));
+			totCount += Integer.parseInt((String) item.get("totCount"));
 		}
 			
 		resultMap.put("customerId", customerId);
 		resultMap.put("stationList", stationList);
 		resultMap.put("power", power);
 		resultMap.put("totalPrice", totalPrice);
+		resultMap.put("totCount", totCount);
 
 
         return resultMap;
