@@ -181,6 +181,7 @@
 .cs-wrap .bg-wrap { position: fixed; z-index: 0; left: 12.22%; bottom: 8.8%; width: 82.22%; margin: 0 auto; }
 
 /* 충전소 검색 */
+.btn-cur-pos { position: absolute; right: 2rem; bottom: 7.5rem;  width: 3rem; height: auto; }
 .detail_map { position: relative; }
 .detail_map .charg_search-wrap { position: fixed; z-index: 3; width: 58.3888%; top: 2rem; left: 1rem; }
 .detail_map .charg_search-wrap > ul::after { content: ""; display: block; clear: both; }
