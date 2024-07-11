@@ -74,9 +74,9 @@
 			<button class="btn_open-charSearch" type="button">
 				<img src="/resources/images/btn_search-state.png" alt="충전소 검색 버튼">
 			</button>
-			<button type="button" id="curPos" class="btn-cur-pos">
+			<!-- <button type="button" id="curPos" class="btn-cur-pos">
 				<img src="/resources/images/btn_nowPosition.png" alt="내 위치 찾기">
-			</button>
+			</button> -->
 			<div id="charSearch-popup" class="slide-popup-wrap">
 				<button type="button" class="btn_close-slidePopup">
 					<img src="/resources/images/btn-popup-close.png" alt="닫기 버튼">
@@ -149,7 +149,7 @@
 		var map = new daum.maps.Map(container, options); //지도 생성 및 객체 리턴
 		
 		// 지도 최대 축소 설정
-		map.setMaxLevel(7);
+		map.setMaxLevel(8);
 		
 		// 마커 클러스터러 객체 생성
 		// var clusterer = new daum.maps.MarkerClusterer({
@@ -159,7 +159,7 @@
 		// });
 
 		// 사용자 위치 찾기
-		geolocationPos();
+		// geolocationPos();
 		function geolocationPos() {
 			if(navigator.geolocation) {
 				// Geolocation을 이용해서 접속 위치를 얻어온다
