@@ -389,3 +389,12 @@ select::-ms-expand{ display:none;/*for IE10,11*/ }
 /* 2024.07.02 nav log in / log out css add */
 .mt-10{ margin-top: 10px; }
 .mr-5{ margin-right: 5px; }
+
+/* QR 충전 애니메이션 */
+.po-r { position: relative; }
+.qr-ani { position: absolute; top: 0; left: 50%; transform: translate(-50%, 30%); width: 40px; }
+.qr-bar { animation: motion 2.0s linear 0s infinite alternate; }
+@keyframes motion { 
+    0% { margin-top: 0px; }
+    100% { margin-top: 40px; }
+}

@@ -253,9 +253,12 @@
         </div>
 		<div class="indivi4-child4 plr-5">
 			<ul>
-	            <li class="main-item">
-	                <aa onclick="bridgeUtil.fn_qrScanProc();" >
+	            <li class="main-item po-r">
+	                <a onclick="bridgeUtil.fn_qrScanProc();" >
 						<img src="/resources/images/blue/ico_main07.png" class="main-img">
+						<div class="qr-ani">
+							<img src="/resources/images/blue/ico_main10.png" class="qr-bar" >
+						</div>
 						<p>QR 충전</p>
 					</a>
 	            </li>
