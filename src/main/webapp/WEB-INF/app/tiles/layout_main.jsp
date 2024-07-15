@@ -23,7 +23,7 @@
 
     $(document).ready(
         function() {
-            $("#imgLogo").append("<h1><img src='/resources/images/dongah-white.png' alt='DonAh' /></h1>");
+            $("#imgLogo").append("<h1><img src='/resources/images/dongah-white-v2.png' alt='DonAh' /></h1>");
 
             //예약현황 체크
             //paymentCheck();
