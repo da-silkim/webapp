@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:mariadb://211.44.234.112:3306/blue_networks?useSSL=false&amp;serverTimezone=UTC&amp;autoReconnection=true
+    url: jdbc:mariadb://211.44.234.120:3306/blue_networks?useSSL=false&amp;serverTimezone=UTC&amp;autoReconnection=true
     username: blue_networks
     password: blue_networks
 
