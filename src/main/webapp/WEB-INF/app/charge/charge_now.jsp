@@ -77,6 +77,7 @@
                                 alert("원격 충전이 종료되었습니다.");
 
                                 location.href = "/app/main";
+                                location.reload();
                             } else {
                                 alert("원격 충전 종료에 실패했습니다. 관리자에게 문의해 주세요.");
                             }
